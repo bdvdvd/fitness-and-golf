@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brett's Training Dashboard</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a1a1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Training">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f8f6; color: #1a1a1a; padding: 16px; }
+h1 { font-size: 17px; font-weight: 500; margin-bottom: 3px; }
+.subtitle { font-size: 11px; color: #888; margin-bottom: 14px; }
+.metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+@media(min-width:460px){ .metrics { grid-template-columns: repeat(4, 1fr); } }
+.mc { background: #fff; border-radius: 10px; padding: 10px 12px; border: 0.5px solid #e8e8e8; }
+.mc-label { font-size: 10px; color: #888; margin-bottom: 2px; }
+.mc-val { font-size: 20px; font-weight: 500; }
+.mc-sub { font-size: 10px; color: #aaa; margin-top: 1px; }
+.eugene-box { background: #f0f7ff; border: 0.5px solid #b5d4f4; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
+.eugene-box h3 { font-size: 12px; font-weight: 500; color: #185fa5; margin-bottom: 8px; }
+.eugene-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+@media(min-width:380px){ .eugene-stats { grid-template-columns: repeat(4, 1fr); } }
+.eugene-stat { font-size: 10px; color: #378ADD; }
+.eugene-stat span { display: block; font-size: 14px; font-weight: 500; color: #0c447c; }
+.tabs { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+.tab { background: none; border: 0.5px solid #ddd; border-radius: 8px; padding: 5px 12px; font-size: 12px; cursor: pointer; color: #888; font-family: inherit; }
+.tab.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; font-size: 11px; color: #888; }
+.legend span { display: flex; align-items: center; gap: 4px; }
+.legend-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+.chart-wrap { position: relative; width: 100%; height: 240px; background: #fff; border-radius: 10px; border: 0.5px solid #e8e8e8; padding: 10px; margin-bottom: 14px; }
+.table-wrap { background: #fff; border-radius: 10px; border: 0.5px solid #e8e8e8; overflow: hidden; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 360px; }
+th { padding: 7px 10px; text-align: left; font-weight: 500; color: #888; background: #f8f8f6; font-size: 10px; white-space: nowrap; }
+td { padding: 6px 10px; border-top: 0.5px solid #f0f0f0; white-space: nowrap; }
+tr.race-row td { font-weight: 500; background: #fff5f5; }
+.badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<h1>Training Dashboard</h1>
+<p class="subtitle">Sun Run + Eugene Half prep · Mar 2 – Apr 26</p>
+
+<div class="metrics">
+  <div class="mc"><div class="mc-label">Total runs</div><div class="mc-val">16</div><div class="mc-sub">inc. Sun Run</div></div>
+  <div class="mc"><div class="mc-label">Total km</div><div class="mc-val">106.6</div><div class="mc-sub">training + race</div></div>
+  <div class="mc"><div class="mc-label">Sun Run</div><div class="mc-val">47:32</div><div class="mc-sub">missed PR by 25s</div></div>
+  <div class="mc"><div class="mc-label">VO2 max</div><div class="mc-val">52</div><div class="mc-sub">LT: 4:37/km</div></div>
+</div>
+
+<div class="eugene-box">
+  <h3>Eugene Half Marathon — Apr 26 · Goal: Sub 1:45:00</h3>
+  <div class="eugene-stats">
+    <div class="eugene-stat">Target pace<span>4:59/km</span></div>
+    <div class="eugene-stat">LT pace<span>4:37/km</span></div>
+    <div class="eugene-stat">Prediction<span>1:43–1:46</span></div>
+    <div class="eugene-stat">Max safe HR<span>177 bpm</span></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showChart('pace',this)">Pace</button>
+  <button class="tab" onclick="showChart('hr',this)">Heart rate</button>
+  <button class="tab" onclick="showChart('distance',this)">Distance</button>
+  <button class="tab" onclick="showChart('type',this)">Run types</button>
+</div>
+
+<div class="legend" id="legend"></div>
+<div class="chart-wrap"><canvas id="chart" role="img" aria-label="Training progress chart"></canvas></div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Date</th><th>Type</th><th>Dist</th><th>Pace</th><th>HR</th><th>Notes</th></tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const runs = [
+  {date:'Mar 2', type:'Easy', km:7.00, pace:5.20, hr:159, notes:'Treadmill'},
+  {date:'Mar 5', type:'Easy', km:5.01, pace:5.52, hr:162, notes:'Outdoor'},
+  {date:'Mar 7', type:'Long', km:10.01, pace:5.58, hr:153, notes:'Outdoor'},
+  {date:'Mar 10', type:'Easy', km:6.00, pace:5.47, hr:149, notes:'Treadmill'},
+  {date:'Mar 12', type:'Tempo', km:6.00, pace:5.00, hr:155, notes:'Treadmill'},
+  {date:'Mar 15', type:'Long', km:12.00, pace:5.58, hr:154, notes:'Outdoor'},
+  {date:'Mar 17', type:'Easy', km:7.00, pace:5.58, hr:159, notes:'Treadmill'},
+  {date:'Mar 20', type:'Tempo', km:7.00, pace:4.98, hr:168, notes:'Outdoor, windy'},
+  {date:'Mar 21', type:'Long', km:15.00, pace:5.68, hr:151, notes:'Outdoor, 88m'},
+  {date:'Mar 25', type:'Easy', km:7.00, pace:5.50, hr:156, notes:'Treadmill'},
+  {date:'Apr 1', type:'Easy', km:7.00, pace:5.87, hr:155, notes:'Treadmill'},
+  {date:'Apr 3', type:'Threshold', km:6.85, pace:5.28, hr:157, notes:'Garmin workout'},
+  {date:'Apr 4', type:'Long', km:13.01, pace:5.72, hr:155, notes:'Outdoor'},
+  {date:'Apr 16', type:'Easy', km:5.00, pace:6.27, hr:128, notes:'With friends'},
+  {date:'Apr 17', type:'Shakeout', km:3.30, pace:5.10, hr:164, notes:'Pre-race'},
+  {date:'Apr 19', type:'RACE', km:10.14, pace:4.68, hr:174, notes:'Sun Run 47:32'},
+];
+
+const colors = {
+  Easy:'#378ADD', Tempo:'#D85A30', Long:'#1D9E75',
+  Threshold:'#BA7517', Shakeout:'#D4537E', RACE:'#E24B4A'
+};
+
+function paceStr(p) {
+  const m = Math.floor(p);
+  const s = Math.round((p-m)*60);
+  return m+':'+(s<10?'0':'')+s;
+}
+
+const tbody = document.getElementById('tbody');
+runs.forEach(r => {
+  const tr = document.createElement('tr');
+  if(r.type==='RACE') tr.className='race-row';
+  tr.innerHTML = `
+    <td>${r.date}</td>
+    <td><span class="badge" style="background:${colors[r.type]}22;color:${colors[r.type]};">${r.type}</span></td>
+    <td>${r.km.toFixed(1)} km</td>
+    <td style="font-weight:500;">${paceStr(r.pace)}/km</td>
+    <td>${r.hr}</td>
+    <td style="color:#888;">${r.notes}</td>`;
+  tbody.appendChild(tr);
+});
+
+let chart;
+function setLegend(items) {
+  document.getElementById('legend').innerHTML = items.map(i=>
+    `<span><span class="legend-dot" style="background:${i.c}"></span>${i.l}</span>`
+  ).join('');
+}
+
+function showChart(type, btn) {
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(chart) chart.destroy();
+  const ctx = document.getElementById('chart').getContext('2d');
+  const labels = runs.map(r=>r.date);
+
+  if(type==='pace') {
+    const byType = {};
+    runs.forEach(r => {
+      if(!byType[r.type]) byType[r.type] = Array(runs.length).fill(null);
+      byType[r.type][runs.indexOf(r)] = r.pace;
+    });
+    const datasets = Object.entries(byType).map(([t,data])=>({
+      label:t, data, borderColor:colors[t], backgroundColor:colors[t]+'33',
+      pointRadius:4, pointHoverRadius:6,
+      borderDash:t==='Tempo'?[5,3]:t==='Threshold'?[8,4]:t==='Shakeout'?[2,2]:[],
+      spanGaps:false, tension:0.3, fill:false
+    }));
+    setLegend(Object.keys(byType).map(t=>({c:colors[t],l:t})));
+    chart = new Chart(ctx,{type:'line',data:{labels,datasets},options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+paceStr(c.raw)+'/km'}}},
+      scales:{
+        y:{reverse:true,min:4.5,max:6.5,ticks:{callback:v=>paceStr(v),font:{size:9}},title:{display:true,text:'min/km',font:{size:9}}},
+        x:{ticks:{font:{size:9},maxRotation:45,autoSkip:false}}
+      }
+    }});
+  } else if(type==='hr') {
+    setLegend([{c:'#E24B4A',l:'avg HR'},{c:'#E24B4A77',l:'LT (177 bpm)'}]);
+    chart = new Chart(ctx,{type:'line',data:{labels,datasets:[
+      {label:'Avg HR',data:runs.map(r=>r.hr),borderColor:'#E24B4A',backgroundColor:'#E24B4A22',pointRadius:4,tension:0.3,fill:true},
+      {label:'LT',data:Array(runs.length).fill(177),borderColor:'#E24B4A',borderDash:[6,4],pointRadius:0,borderWidth:1.5,fill:false}
+    ]},options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+Math.round(c.raw)+' bpm'}}},
+      scales:{
+        y:{min:120,max:195,title:{display:true,text:'bpm',font:{size:9}},ticks:{font:{size:9}}},
+        x:{ticks:{font:{size:9},maxRotation:45,autoSkip:false}}
+      }
+    }});
+  } else if(type==='distance') {
+    setLegend(Object.keys(colors).map(t=>({c:colors[t],l:t})));
+    chart = new Chart(ctx,{type:'bar',data:{labels,datasets:[{
+      label:'Distance',data:runs.map(r=>r.km),
+      backgroundColor:runs.map(r=>colors[r.type]),borderRadius:3
+    }]},options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw.toFixed(1)+' km'}}},
+      scales:{
+        y:{title:{display:true,text:'km',font:{size:9}},ticks:{font:{size:9}}},
+        x:{ticks:{font:{size:9},maxRotation:45,autoSkip:false}}
+      }
+    }});
+  } else {
+    const counts={};
+    runs.forEach(r=>counts[r.type]=(counts[r.type]||0)+1);
+    const types=Object.keys(counts);
+    setLegend(types.map(t=>({c:colors[t],l:`${t} (${counts[t]})`})));
+    chart = new Chart(ctx,{type:'doughnut',data:{
+      labels:types,
+      datasets:[{data:types.map(t=>counts[t]),backgroundColor:types.map(t=>colors[t]),borderWidth:2}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+  }
+}
+showChart('pace', document.querySelector('.tab'));
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed:', err));
+  });
+}
+</script>
+</body>
+</html>

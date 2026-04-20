@@ -40,9 +40,29 @@ th { padding: 7px 10px; text-align: left; font-weight: 500; color: #888; backgro
 td { padding: 6px 10px; border-top: 0.5px solid #f0f0f0; white-space: nowrap; }
 tr.race-row td { font-weight: 500; background: #fff5f5; }
 .badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 500; }
+.section-nav { display: flex; gap: 6px; margin-bottom: 14px; border-bottom: 0.5px solid #e8e8e8; padding-bottom: 10px; }
+.section-tab { background: none; border: 0.5px solid transparent; border-radius: 8px; padding: 7px 16px; font-size: 13px; font-weight: 500; cursor: pointer; color: #888; font-family: inherit; }
+.section-tab.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.section { display: none; }
+.section.active { display: block; }
+.metrics-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+@media(min-width:460px){ .metrics-row { grid-template-columns: repeat(4, 1fr); } }
+.goal-box { background: #f4f9f3; border: 0.5px solid #c7dfc5; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
+.goal-box h3 { font-size: 12px; font-weight: 500; color: #276b25; margin-bottom: 8px; }
+.goal-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+@media(min-width:380px){ .goal-stats { grid-template-columns: repeat(4, 1fr); } }
+.goal-stat { font-size: 10px; color: #4d9a4a; }
+.goal-stat span { display: block; font-size: 14px; font-weight: 500; color: #1b5a19; }
 </style>
 </head>
 <body>
+
+<div class="section-nav">
+  <button class="section-tab active" onclick="showSection('running',this)">Running</button>
+  <button class="section-tab" onclick="showSection('golf',this)">Golf</button>
+</div>
+
+<div class="section active" id="section-running">
 
 <h1>Training Dashboard</h1>
 <p class="subtitle">Sun Run + Eugene Half prep · Mar 2 – Apr 26</p>
@@ -80,6 +100,56 @@ tr.race-row td { font-weight: 500; background: #fff5f5; }
     <tbody id="tbody"></tbody>
   </table>
 </div>
+
+</div><!-- /section-running -->
+
+<div class="section" id="section-golf">
+
+<h1>Golf</h1>
+<p class="subtitle">Pitt Meadows GC · Goal: 7 handicap (current 10.3)</p>
+
+<div class="metrics-row">
+  <div class="mc"><div class="mc-label">Rounds</div><div class="mc-val">5</div><div class="mc-sub">this season</div></div>
+  <div class="mc"><div class="mc-label">Scoring avg</div><div class="mc-val">89.0</div><div class="mc-sub">best: 86</div></div>
+  <div class="mc"><div class="mc-label">Last 5 avg</div><div class="mc-val">89.0</div><div class="mc-sub">trend flat</div></div>
+  <div class="mc"><div class="mc-label">Handicap</div><div class="mc-val">10.3</div><div class="mc-sub">Golf Canada</div></div>
+</div>
+
+<div class="metrics-row">
+  <div class="mc"><div class="mc-label">Avg FIR %</div><div class="mc-val">31%</div><div class="mc-sub">target 60%</div></div>
+  <div class="mc"><div class="mc-label">Avg GIR %</div><div class="mc-val">9%</div><div class="mc-sub">target 40%</div></div>
+  <div class="mc"><div class="mc-label">Avg putts</div><div class="mc-val">31</div><div class="mc-sub">target ≤ 30</div></div>
+  <div class="mc"><div class="mc-label">3-putts/rd</div><div class="mc-val">1.0</div><div class="mc-sub">target ≤ 1</div></div>
+</div>
+
+<div class="goal-box">
+  <h3>Road to 7 handicap · from 10.3</h3>
+  <div class="goal-stats">
+    <div class="goal-stat">Score target<span>≤ 82</span></div>
+    <div class="goal-stat">FIR target<span>60%</span></div>
+    <div class="goal-stat">GIR target<span>40%</span></div>
+    <div class="goal-stat">3-putts target<span>≤ 1/rd</span></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showGolfChart('score',this)">Score</button>
+  <button class="tab" onclick="showGolfChart('fir',this)">FIR %</button>
+  <button class="tab" onclick="showGolfChart('gir',this)">GIR %</button>
+  <button class="tab" onclick="showGolfChart('putts',this)">Putts</button>
+</div>
+
+<div class="legend" id="golf-legend"></div>
+<div class="chart-wrap"><canvas id="golf-chart" role="img" aria-label="Golf progress chart"></canvas></div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Date</th><th>Course</th><th>Tees</th><th>Score</th><th>FIR</th><th>GIR</th><th>Putts</th><th>Notes</th></tr></thead>
+    <tbody id="golf-tbody"></tbody>
+  </table>
+</div>
+
+</div><!-- /section-golf -->
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
@@ -199,7 +269,114 @@ function showChart(type, btn) {
     },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
   }
 }
-showChart('pace', document.querySelector('.tab'));
+showChart('pace', document.querySelector('#section-running .tab'));
+
+// --- Golf data & charts ---
+const rounds = [
+  {date:'Feb 28', course:'Pitt', tees:'Blue',  score:87, fairway:5, gir:2, putts:31, notes:'With CB, Craig, Bryce'},
+  {date:'Mar 14', course:'Pitt', tees:'Blue',  score:86, fairway:6, gir:6, putts:31, notes:'Best round of year'},
+  {date:'Apr 3',  course:'Pitt', tees:'Blue',  score:90, fairway:2, gir:null, putts:null, notes:''},
+  {date:'Apr 4',  course:'Pitt', tees:'Blue',  score:93, fairway:4, gir:null, putts:null, notes:''},
+  {date:'Apr 18', course:'Pitt', tees:'Black', score:89, fairway:5, gir:null, putts:null, notes:''},
+];
+
+const golfTbody = document.getElementById('golf-tbody');
+rounds.forEach(r => {
+  const tr = document.createElement('tr');
+  const firPct = r.fairway !== null ? Math.round(r.fairway / 14 * 100) + '%' : '';
+  const girPct = r.gir !== null ? Math.round(r.gir / 18 * 100) + '%' : '';
+  tr.innerHTML = `
+    <td>${r.date}</td>
+    <td>${r.course}</td>
+    <td><span class="badge" style="background:${r.tees==='Black'?'#1a1a1a22':'#378ADD22'};color:${r.tees==='Black'?'#1a1a1a':'#378ADD'};">${r.tees}</span></td>
+    <td style="font-weight:500;">${r.score}</td>
+    <td>${r.fairway !== null ? r.fairway + ' (' + firPct + ')' : ''}</td>
+    <td>${r.gir !== null ? r.gir + ' (' + girPct + ')' : ''}</td>
+    <td>${r.putts !== null ? r.putts : ''}</td>
+    <td style="color:#888;">${r.notes}</td>`;
+  golfTbody.appendChild(tr);
+});
+
+let golfChart;
+function setGolfLegend(items) {
+  document.getElementById('golf-legend').innerHTML = items.map(i =>
+    `<span><span class="legend-dot" style="background:${i.c}"></span>${i.l}</span>`
+  ).join('');
+}
+
+function showGolfChart(type, btn) {
+  document.querySelectorAll('#section-golf .tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (golfChart) golfChart.destroy();
+  const ctx = document.getElementById('golf-chart').getContext('2d');
+  const labels = rounds.map(r => r.date);
+
+  if (type === 'score') {
+    setGolfLegend([{c:'#1D9E75',l:'Score'},{c:'#1D9E7577',l:'Target (82)'}]);
+    golfChart = new Chart(ctx, {type:'line', data:{labels, datasets:[
+      {label:'Score', data:rounds.map(r=>r.score), borderColor:'#1D9E75', backgroundColor:'#1D9E7522', pointRadius:5, pointHoverRadius:7, tension:0.3, fill:true},
+      {label:'Target', data:rounds.map(()=>82), borderColor:'#1D9E75', borderDash:[6,4], pointRadius:0, borderWidth:1.5, fill:false}
+    ]}, options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw}}},
+      scales:{
+        y:{min:78, max:100, title:{display:true,text:'Score',font:{size:9}}, ticks:{font:{size:9}}},
+        x:{ticks:{font:{size:9}}}
+      }
+    }});
+  } else if (type === 'fir') {
+    setGolfLegend([{c:'#378ADD',l:'FIR %'},{c:'#378ADD77',l:'Target (60%)'}]);
+    golfChart = new Chart(ctx, {type:'bar', data:{labels, datasets:[
+      {label:'FIR %', data:rounds.map(r=>r.fairway !== null ? Math.round(r.fairway/14*100) : null), backgroundColor:'#378ADD', borderRadius:3},
+      {label:'Target', type:'line', data:rounds.map(()=>60), borderColor:'#378ADD', borderDash:[6,4], pointRadius:0, borderWidth:1.5, fill:false}
+    ]}, options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+'%'}}},
+      scales:{
+        y:{min:0, max:100, title:{display:true,text:'%',font:{size:9}}, ticks:{font:{size:9}}},
+        x:{ticks:{font:{size:9}}}
+      }
+    }});
+  } else if (type === 'gir') {
+    setGolfLegend([{c:'#D85A30',l:'GIR %'},{c:'#D85A3077',l:'Target (40%)'}]);
+    golfChart = new Chart(ctx, {type:'bar', data:{labels, datasets:[
+      {label:'GIR %', data:rounds.map(r=>r.gir !== null ? Math.round(r.gir/18*100) : null), backgroundColor:'#D85A30', borderRadius:3},
+      {label:'Target', type:'line', data:rounds.map(()=>40), borderColor:'#D85A30', borderDash:[6,4], pointRadius:0, borderWidth:1.5, fill:false}
+    ]}, options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+'%'}}},
+      scales:{
+        y:{min:0, max:100, title:{display:true,text:'%',font:{size:9}}, ticks:{font:{size:9}}},
+        x:{ticks:{font:{size:9}}}
+      }
+    }});
+  } else if (type === 'putts') {
+    setGolfLegend([{c:'#BA7517',l:'Putts'},{c:'#BA751777',l:'Target (30)'}]);
+    golfChart = new Chart(ctx, {type:'line', data:{labels, datasets:[
+      {label:'Putts', data:rounds.map(r=>r.putts), borderColor:'#BA7517', backgroundColor:'#BA751722', pointRadius:5, tension:0.3, fill:true},
+      {label:'Target', data:rounds.map(()=>30), borderColor:'#BA7517', borderDash:[6,4], pointRadius:0, borderWidth:1.5, fill:false}
+    ]}, options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.raw||'—')}}},
+      scales:{
+        y:{min:26, max:36, title:{display:true,text:'Putts',font:{size:9}}, ticks:{font:{size:9}}},
+        x:{ticks:{font:{size:9}}}
+      }
+    }});
+  }
+}
+
+let golfInited = false;
+function showSection(name, btn) {
+  document.querySelectorAll('.section-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  if (name === 'golf' && !golfInited) {
+    showGolfChart('score', document.querySelector('#section-golf .tab'));
+    golfInited = true;
+  }
+}
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

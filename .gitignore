@@ -1,0 +1,3 @@
+# Local working files (source of truth is Google Sheets)
+*.xlsx
+.DS_Store

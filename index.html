@@ -334,30 +334,59 @@ function showChart(type, btn) {
 showChart('pace', document.querySelector('#section-running .tab'));
 
 // --- Golf data & charts ---
-const rounds = [
-  {date:'Feb 28', course:'Pitt', tees:'Blue',  score:87, fairway:5, gir:2, putts:31, notes:'With CB, Craig, Bryce'},
-  {date:'Mar 14', course:'Pitt', tees:'Blue',  score:86, fairway:6, gir:6, putts:31, notes:'Best round of year'},
-  {date:'Apr 3',  course:'Pitt', tees:'Blue',  score:90, fairway:2, gir:null, putts:null, notes:''},
-  {date:'Apr 4',  course:'Pitt', tees:'Blue',  score:93, fairway:4, gir:null, putts:null, notes:''},
-  {date:'Apr 18', course:'Pitt', tees:'Black', score:89, fairway:5, gir:null, putts:null, notes:''},
-];
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyU3W0ZvA5cdSmmLxSxa4OP-JJjIAOOEc6UqRphYXB1JRaedSY4mH96gNRPod672b1z/exec?key=bdv-8f3k-2026';
+let rounds = [];
 
-const golfTbody = document.getElementById('golf-tbody');
-rounds.forEach(r => {
-  const tr = document.createElement('tr');
-  const firPct = r.fairway !== null ? Math.round(r.fairway / 14 * 100) + '%' : '';
-  const girPct = r.gir !== null ? Math.round(r.gir / 18 * 100) + '%' : '';
-  tr.innerHTML = `
-    <td>${r.date}</td>
-    <td>${r.course}</td>
-    <td><span class="badge" style="background:${r.tees==='Black'?'#1a1a1a22':'#378ADD22'};color:${r.tees==='Black'?'#1a1a1a':'#378ADD'};">${r.tees}</span></td>
-    <td style="font-weight:500;">${r.score}</td>
-    <td>${r.fairway !== null ? r.fairway + ' (' + firPct + ')' : ''}</td>
-    <td>${r.gir !== null ? r.gir + ' (' + girPct + ')' : ''}</td>
-    <td>${r.putts !== null ? r.putts : ''}</td>
-    <td style="color:#888;">${r.notes}</td>`;
-  golfTbody.appendChild(tr);
-});
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDate(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return MONTHS[d.getMonth()] + ' ' + d.getDate();
+}
+function shortCourse(name) {
+  if (!name) return '';
+  return name.replace(/\s*(GC|Golf Club|Country Club|CC)\s*$/i, '').replace('Pitt Meadows','Pitt');
+}
+function numOrNull(v) {
+  return (v === '' || v === null || v === undefined) ? null : Number(v);
+}
+
+async function loadGolf() {
+  const res = await fetch(SHEETS_URL);
+  const data = await res.json();
+  rounds = data.map(r => ({
+    date:    fmtDate(r.Date),
+    course:  shortCourse(r.Course),
+    tees:    r.Tees || '',
+    score:   numOrNull(r.Score),
+    fairway: numOrNull(r.Fairway),
+    gir:     numOrNull(r.GIR),
+    putts:   numOrNull(r.Putts),
+    notes:   r.Notes || ''
+  }));
+  renderGolfTable();
+  showGolfChart('score', document.querySelector('#section-golf .tab'));
+}
+
+function renderGolfTable() {
+  const golfTbody = document.getElementById('golf-tbody');
+  golfTbody.innerHTML = '';
+  rounds.forEach(r => {
+    const tr = document.createElement('tr');
+    const firPct = r.fairway !== null ? Math.round(r.fairway / 14 * 100) + '%' : '';
+    const girPct = r.gir !== null ? Math.round(r.gir / 18 * 100) + '%' : '';
+    tr.innerHTML = `
+      <td>${r.date}</td>
+      <td>${r.course}</td>
+      <td><span class="badge" style="background:${r.tees==='Black'?'#1a1a1a22':'#378ADD22'};color:${r.tees==='Black'?'#1a1a1a':'#378ADD'};">${r.tees}</span></td>
+      <td style="font-weight:500;">${r.score}</td>
+      <td>${r.fairway !== null ? r.fairway + ' (' + firPct + ')' : ''}</td>
+      <td>${r.gir !== null ? r.gir + ' (' + girPct + ')' : ''}</td>
+      <td>${r.putts !== null ? r.putts : ''}</td>
+      <td style="color:#888;">${r.notes}</td>`;
+    golfTbody.appendChild(tr);
+  });
+}
 
 let golfChart;
 function setGolfLegend(items) {
@@ -567,7 +596,7 @@ function showSection(name, btn) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById('section-' + name).classList.add('active');
   if (name === 'golf' && !golfInited) {
-    showGolfChart('score', document.querySelector('#section-golf .tab'));
+    loadGolf().catch(e => console.log('Golf load failed:', e));
     golfInited = true;
   }
   if (name === 'gym' && !gymInited) {

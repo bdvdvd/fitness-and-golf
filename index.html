@@ -192,8 +192,16 @@ tr.race-row td { font-weight: 500; background: #fff5f5; }
       <label style="font-size:10px;color:#888;">Putts<input type="number" id="g-putts" inputmode="numeric" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
-      <label style="font-size:10px;color:#888;">Up & Down<input type="number" id="g-ud" inputmode="numeric" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
-      <label style="font-size:10px;color:#888;">Sand Save<input type="number" id="g-ss" inputmode="numeric" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
+      <label style="font-size:10px;color:#888;">Penalties<input type="number" id="g-pen" inputmode="numeric" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
+      <label style="font-size:10px;color:#888;">3-Putts<input type="number" id="g-3p" inputmode="numeric" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+      <label style="font-size:10px;color:#888;">U&D Att<input type="number" id="g-ud-att" inputmode="numeric" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
+      <label style="font-size:10px;color:#888;">U&D Made<input type="number" id="g-ud-made" inputmode="numeric" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+      <label style="font-size:10px;color:#888;">Sand Att<input type="number" id="g-sand-att" inputmode="numeric" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
+      <label style="font-size:10px;color:#888;">Sand Saves<input type="number" id="g-sand-made" inputmode="numeric" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
     </div>
     <label style="font-size:10px;color:#888;display:block;margin-bottom:6px;">Notes<textarea id="g-notes" rows="2" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;font-family:inherit;resize:vertical;"></textarea></label>
     <button class="day-btn" style="width:100%;background:#1D9E75;color:#fff;border-color:#1D9E75;" onclick="submitGolfLogger()">Save round</button>
@@ -814,8 +822,12 @@ async function submitGolfLogger() {
     fwLong:  numOrEmpty('g-fw-long'),
     gir:     numOrEmpty('g-gir'),
     putts:   numOrEmpty('g-putts'),
-    upDown:  numOrEmpty('g-ud'),
-    sandSave:numOrEmpty('g-ss'),
+    penalties: numOrEmpty('g-pen'),
+    threePutts: numOrEmpty('g-3p'),
+    udAtt:   numOrEmpty('g-ud-att'),
+    udMade:  numOrEmpty('g-ud-made'),
+    sandAtt: numOrEmpty('g-sand-att'),
+    sandMade:numOrEmpty('g-sand-made'),
     notes:   document.getElementById('g-notes').value.trim()
   };
   if (!payload.date) { status.textContent = 'Pick a date'; status.style.color = '#E24B4A'; return; }

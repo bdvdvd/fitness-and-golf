@@ -178,7 +178,7 @@ tr.race-row td { font-weight: 500; background: #fff5f5; }
   <div class="mc"><div class="mc-label">This week</div><div class="mc-val" id="gym-week">0</div><div class="mc-sub">of 3 target</div></div>
   <div class="mc"><div class="mc-label">Last 4 wks</div><div class="mc-val" id="gym-4wk">1</div><div class="mc-sub">of 12 target</div></div>
   <div class="mc"><div class="mc-label">Last session</div><div class="mc-val" id="gym-last">Mar 31</div><div class="mc-sub" id="gym-last-ago">20 days ago</div></div>
-  <div class="mc"><div class="mc-label">Total logged</div><div class="mc-val">53</div><div class="mc-sub">since Jul 2025</div></div>
+  <div class="mc"><div class="mc-label">Total logged</div><div class="mc-val" id="gym-total">0</div><div class="mc-sub">since Jul 2025</div></div>
 </div>
 
 <div class="workout-box">
@@ -491,40 +491,116 @@ const gymProgram = {
   ]
 };
 
-const gymPRs = [
-  {lift:'Bench Press', val:250, sub:'1 x 250 · Aug 1'},
-  {lift:'Back Squat', val:225, sub:'5 x 225 · Dec 30'},
-  {lift:'Hex Bar DL', val:335, sub:'5 x 335 · Aug 5'},
-  {lift:'OH Press', val:55, sub:'12 x 55 · Aug 8'},
-  {lift:'Barbell Row', val:185, sub:'8 x 185 · Aug 24'},
-  {lift:'Weighted Pull-Up', val:'+45', sub:'5 x 45 · Jan 31'}
-];
+let gymPRs = [];
+let gymVolume = [];
+let gymSessionsByWeek = [];
+let gymRecent = [];
 
-const gymVolume = [
-  {muscle:'Chest', sets:4, color:'#E24B4A'},
-  {muscle:'Back', sets:3, color:'#378ADD'},
-  {muscle:'Legs', sets:6, color:'#1D9E75'},
-  {muscle:'Shoulders', sets:3, color:'#BA7517'},
-  {muscle:'Arms', sets:3, color:'#D85A30'},
-  {muscle:'Core', sets:0, color:'#D4537E'}
-];
+async function loadGym() {
+  const [sessions, exercises] = await Promise.all([
+    fetch(SHEETS_URL + '&sheet=Sessions').then(r => r.json()),
+    fetch(SHEETS_URL + '&sheet=Exercises').then(r => r.json())
+  ]);
+  const muscleMap = {};
+  exercises.forEach(e => {
+    muscleMap[e['Raw name']] = {canonical: e.Canonical, muscle: e['Muscle group']};
+  });
 
-const gymSessionsByWeek = [
-  {w:'Wk of Mar 2', n:2},
-  {w:'Wk of Mar 9', n:3},
-  {w:'Wk of Mar 16', n:1},
-  {w:'Wk of Mar 23', n:0},
-  {w:'Wk of Mar 30', n:1},
-  {w:'Wk of Apr 6', n:0},
-  {w:'Wk of Apr 13', n:0}
-];
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dow = today.getDay();
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+  const fourWkAgo = new Date(today); fourWkAgo.setDate(today.getDate() - 28);
 
-const gymRecent = [
-  {date:'Mar 31', day:'-', lifts:'Bench, Single-Leg RDL, DB Row, Reverse Lunge', sets:21},
-  {date:'Mar 18', day:'R3 D3', lifts:'DB Arnold Press, Standing Calf Raise, Side Plank', sets:9},
-  {date:'Mar 7',  day:'R3 D2', lifts:'Hex Bar DL, OHP, Pull-Up', sets:12},
-  {date:'Mar 2',  day:'R3 D1', lifts:'Bench, Goblet Squat, Cable Row', sets:15}
-];
+  const byDate = {};
+  const prs = {};
+  const PR_MATCHERS = [
+    {name:'Bench Press',      match:(c,w) => c === 'Barbell Bench Press'},
+    {name:'Back Squat',       match:(c,w) => c === 'Back Squat'},
+    {name:'Hex Bar DL',       match:(c,w) => c === 'Hex Bar Deadlift'},
+    {name:'OH Press',         match:(c,w) => c === 'DB Overhead Press' || c === 'Overhead Press'},
+    {name:'Barbell Row',      match:(c,w) => c === 'Barbell Row'},
+    {name:'Weighted Pull-Up', match:(c,w) => c === 'Pull-Up' && Number(w) > 0}
+  ];
+  const vol = {Chest:0, Back:0, Legs:0, Shoulders:0, Arms:0, Core:0};
+
+  sessions.forEach(r => {
+    const date = new Date(r.Date);
+    if (isNaN(date)) return;
+    const dateStr = date.toISOString().split('T')[0];
+    const m = muscleMap[r.Exercise];
+    if (!m) return;
+    if (!byDate[dateStr]) {
+      byDate[dateStr] = {date, dateStr, day: ((r.Rotation||'') + ' ' + (r.Day||'')).trim() || '-', exercises: [], totalSets: 0};
+    }
+    byDate[dateStr].exercises.push({ex: r.Exercise, canonical: m.canonical, muscle: m.muscle});
+    const inLast4 = date >= fourWkAgo;
+    for (let s = 1; s <= 4; s++) {
+      const reps = Number(r['Set ' + s + ' Reps']) || 0;
+      const weight = Number(r['Set ' + s + ' Weight']) || 0;
+      if (!reps) continue;
+      byDate[dateStr].totalSets++;
+      if (inLast4 && vol[m.muscle] !== undefined) vol[m.muscle]++;
+      PR_MATCHERS.forEach(p => {
+        if (p.match(m.canonical, weight)) {
+          if (!prs[p.name] || weight > prs[p.name].weight) {
+            prs[p.name] = {weight, reps, dateStr};
+          }
+        }
+      });
+    }
+  });
+
+  const dates = Object.values(byDate).map(d => d.date);
+  const sorted = dates.slice().sort((a,b) => b - a);
+  const latest = sorted[0];
+
+  document.getElementById('gym-week').textContent = dates.filter(d => d >= weekStart).length;
+  document.getElementById('gym-4wk').textContent = dates.filter(d => d >= fourWkAgo).length;
+  document.getElementById('gym-total').textContent = Object.keys(byDate).length;
+  if (latest) {
+    document.getElementById('gym-last').textContent = MONTHS[latest.getMonth()] + ' ' + latest.getDate();
+    document.getElementById('gym-last-ago').textContent = Math.floor((today - latest) / 86400000) + ' days ago';
+  }
+
+  const prConfig = ['Bench Press','Back Squat','Hex Bar DL','OH Press','Barbell Row','Weighted Pull-Up'];
+  gymPRs = prConfig.map(name => {
+    const pr = prs[name];
+    if (!pr) return {lift: name, val: '-', sub: 'No data'};
+    const d = new Date(pr.dateStr);
+    const lbl = MONTHS[d.getMonth()] + ' ' + d.getDate();
+    const val = name === 'Weighted Pull-Up' ? '+' + pr.weight : pr.weight;
+    return {lift: name, val, sub: pr.reps + ' x ' + pr.weight + ' · ' + lbl};
+  });
+
+  const muscleColors = {Chest:'#E24B4A', Back:'#378ADD', Legs:'#1D9E75', Shoulders:'#BA7517', Arms:'#D85A30', Core:'#D4537E'};
+  gymVolume = Object.entries(vol).map(([muscle, sets]) => ({muscle, sets, color: muscleColors[muscle]}));
+
+  gymSessionsByWeek = [];
+  for (let i = 6; i >= 0; i--) {
+    const wkStart = new Date(weekStart); wkStart.setDate(weekStart.getDate() - i * 7);
+    const wkEnd = new Date(wkStart); wkEnd.setDate(wkStart.getDate() + 7);
+    gymSessionsByWeek.push({
+      w: 'Wk of ' + MONTHS[wkStart.getMonth()] + ' ' + wkStart.getDate(),
+      n: dates.filter(d => d >= wkStart && d < wkEnd).length
+    });
+  }
+
+  gymRecent = sorted.slice(0, 4).map(d => {
+    const sess = byDate[d.toISOString().split('T')[0]];
+    const mains = sess.exercises
+      .filter(e => e.muscle && e.muscle !== 'Warm-up' && e.muscle !== 'Review')
+      .slice(0, 3)
+      .map(e => e.canonical.replace('Barbell ','').replace('DB ',''));
+    const lifts = mains.length ? mains.join(', ') : sess.exercises.slice(0,3).map(e => e.ex).join(', ');
+    return {date: MONTHS[d.getMonth()] + ' ' + d.getDate(), day: sess.day, lifts, sets: sess.totalSets};
+  });
+
+  renderGymWorkout('Day 1');
+  renderGymPRs();
+  renderGymTable();
+  showGymChart('volume', document.querySelector('#section-gym .tab'));
+}
 
 function renderGymWorkout(day) {
   const list = document.getElementById('workout-list');
@@ -600,10 +676,7 @@ function showSection(name, btn) {
     golfInited = true;
   }
   if (name === 'gym' && !gymInited) {
-    renderGymWorkout('Day 1');
-    renderGymPRs();
-    renderGymTable();
-    showGymChart('volume', document.querySelector('#section-gym .tab'));
+    loadGym().catch(e => console.log('Gym load failed:', e));
     gymInited = true;
   }
 }

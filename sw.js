@@ -1,4 +1,4 @@
-const CACHE_NAME = 'training-dashboard-v7';
+const CACHE_NAME = 'training-dashboard-v8';
 const ASSETS = [
   './',
   './index.html',

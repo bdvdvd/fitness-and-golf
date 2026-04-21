@@ -75,12 +75,35 @@ tr.race-row td { font-weight: 500; background: #fff5f5; }
 <body>
 
 <div class="section-nav">
-  <button class="section-tab active" onclick="showSection('running',this)">Running</button>
+  <button class="section-tab active" onclick="showSection('home',this)">Home</button>
+  <button class="section-tab" onclick="showSection('running',this)">Running</button>
   <button class="section-tab" onclick="showSection('golf',this)">Golf</button>
   <button class="section-tab" onclick="showSection('gym',this)">Gym</button>
 </div>
 
-<div class="section active" id="section-running">
+<div class="section active" id="section-home">
+
+<h1>Dashboard</h1>
+<p class="subtitle">Live summary across running, gym, golf</p>
+
+<div class="metrics-row">
+  <div class="mc"><div class="mc-label">Latest run</div><div class="mc-val" id="home-run-val">-</div><div class="mc-sub" id="home-run-sub">-</div></div>
+  <div class="mc"><div class="mc-label">This week</div><div class="mc-val" id="home-wk-km">-</div><div class="mc-sub" id="home-wk-runs">-</div></div>
+  <div class="mc"><div class="mc-label">Latest gym</div><div class="mc-val" id="home-gym-val">-</div><div class="mc-sub" id="home-gym-sub">-</div></div>
+  <div class="mc"><div class="mc-label">Gym this week</div><div class="mc-val" id="home-wk-gym">-</div><div class="mc-sub">of 3 target</div></div>
+</div>
+
+<div class="metrics-row">
+  <div class="mc"><div class="mc-label">Latest round</div><div class="mc-val" id="home-golf-val">-</div><div class="mc-sub" id="home-golf-sub">-</div></div>
+  <div class="mc"><div class="mc-label">Handicap</div><div class="mc-val">10.3</div><div class="mc-sub">target 7.0</div></div>
+</div>
+
+<div class="legend" id="home-legend"></div>
+<div class="chart-wrap"><canvas id="home-chart" role="img" aria-label="Weekly training load"></canvas></div>
+
+</div><!-- /section-home -->
+
+<div class="section" id="section-running">
 
 <h1>Training Dashboard</h1>
 <p class="subtitle">Sun Run + Eugene Half prep · Mar 2 – Apr 26</p>
@@ -224,6 +247,7 @@ function fmtDate(iso) {
 }
 
 let runs = [];
+let allRuns = []; // full run history for home weekly aggregation
 
 // Mobile caps charts at last 15 runs; desktop shows all 30. Table always shows full set.
 function isMobile() { return window.matchMedia('(max-width: 460px)').matches; }
@@ -260,8 +284,8 @@ function renderRunsTable() {
 
 async function loadRuns() {
   const data = await fetch(SHEETS_URL + '&sheet=Runs').then(r => r.json());
-  // Keep last 30 runs for a readable chart
-  runs = data.slice(-30).map(r => ({
+  allRuns = data.map(r => ({
+    rawDate: new Date(r.Date),
     date: fmtDate(r.Date),
     type: r.Type || 'Easy',
     km: Number(r.Km) || 0,
@@ -269,8 +293,12 @@ async function loadRuns() {
     hr: Number(r.HR) || null,
     notes: r.Notes || ''
   }));
+  runs = allRuns.slice(-30);
   renderRunsTable();
-  showChart('pace', document.querySelector('#section-running .tab'));
+  if (document.getElementById('section-running').classList.contains('active')) {
+    showChart('pace', document.querySelector('#section-running .tab'));
+  }
+  homeState.runs = true; tryRenderHome();
 }
 
 let chart;
@@ -363,6 +391,7 @@ async function loadGolf() {
   const res = await fetch(SHEETS_URL);
   const data = await res.json();
   rounds = data.map(r => ({
+    rawDate: new Date(r.Date),
     date:    fmtDate(r.Date),
     course:  shortCourse(r.Course),
     tees:    r.Tees || '',
@@ -373,7 +402,10 @@ async function loadGolf() {
     notes:   r.Notes || ''
   }));
   renderGolfTable();
-  showGolfChart('score', document.querySelector('#section-golf .tab'));
+  if (document.getElementById('section-golf').classList.contains('active')) {
+    showGolfChart('score', document.querySelector('#section-golf .tab'));
+  }
+  homeState.golf = true; tryRenderHome();
 }
 
 function renderGolfTable() {
@@ -503,6 +535,8 @@ let gymPRs = [];
 let gymVolume = [];
 let gymSessionsByWeek = [];
 let gymRecent = [];
+let gymDates = [];     // all gym session Date objects
+let gymLatest = null;  // {date, day, lifts}
 
 async function loadGym() {
   const [sessions, exercises] = await Promise.all([
@@ -604,10 +638,16 @@ async function loadGym() {
     return {date: MONTHS[d.getMonth()] + ' ' + d.getDate(), day: sess.day, lifts, sets: sess.totalSets};
   });
 
+  gymDates = dates.slice();
+  gymLatest = gymRecent[0] || null;
+
   renderGymWorkout('Day 1');
   renderGymPRs();
   renderGymTable();
-  showGymChart('volume', document.querySelector('#section-gym .tab'));
+  if (document.getElementById('section-gym').classList.contains('active')) {
+    showGymChart('volume', document.querySelector('#section-gym .tab'));
+  }
+  homeState.gym = true; tryRenderHome();
 }
 
 function renderGymWorkout(day) {
@@ -673,7 +713,87 @@ function showGymChart(type, btn) {
   }
 }
 
+// --- Home / summary ---
+const homeState = {runs:false, golf:false, gym:false};
+let homeChart;
+
+function weekStartDate() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dow = today.getDay();
+  const ws = new Date(today);
+  ws.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+  return ws;
+}
+
+function tryRenderHome() {
+  if (homeState.runs) {
+    const last = allRuns[allRuns.length - 1];
+    if (last) {
+      document.getElementById('home-run-val').textContent = last.km.toFixed(1) + ' km';
+      document.getElementById('home-run-sub').textContent = last.date + ' · ' + paceStr(last.pace) + '/km · ' + last.type;
+    }
+    const ws = weekStartDate();
+    const wk = allRuns.filter(r => r.rawDate >= ws);
+    const km = wk.reduce((s,r) => s + r.km, 0);
+    document.getElementById('home-wk-km').textContent = km.toFixed(1) + ' km';
+    document.getElementById('home-wk-runs').textContent = wk.length + (wk.length === 1 ? ' run' : ' runs');
+  }
+  if (homeState.gym) {
+    if (gymLatest) {
+      document.getElementById('home-gym-val').textContent = gymLatest.date;
+      document.getElementById('home-gym-sub').textContent = gymLatest.day + ' · ' + gymLatest.sets + ' sets';
+    }
+    const ws = weekStartDate();
+    document.getElementById('home-wk-gym').textContent = gymDates.filter(d => d >= ws).length;
+  }
+  if (homeState.golf) {
+    const last = rounds[rounds.length - 1];
+    if (last) {
+      document.getElementById('home-golf-val').textContent = last.score;
+      document.getElementById('home-golf-sub').textContent = last.date + ' · ' + last.course;
+    }
+  }
+  if (homeState.runs && homeState.gym) renderHomeChart();
+}
+
+function renderHomeChart() {
+  if (homeChart) homeChart.destroy();
+  const ctx = document.getElementById('home-chart').getContext('2d');
+  const weeks = [];
+  const ws = weekStartDate();
+  for (let i = 7; i >= 0; i--) {
+    const s = new Date(ws); s.setDate(ws.getDate() - i*7);
+    const e = new Date(s); e.setDate(s.getDate() + 7);
+    const km = allRuns.filter(r => r.rawDate >= s && r.rawDate < e).reduce((sum,r) => sum + r.km, 0);
+    const gym = gymDates.filter(d => d >= s && d < e).length;
+    weeks.push({label: MONTHS[s.getMonth()] + ' ' + s.getDate(), km: Math.round(km*10)/10, gym});
+  }
+  document.getElementById('home-legend').innerHTML =
+    '<span><span class="legend-dot" style="background:#378ADD"></span>Run km</span>' +
+    '<span><span class="legend-dot" style="background:#BA7517"></span>Gym sessions</span>';
+  homeChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: weeks.map(w => w.label),
+      datasets: [
+        {label:'Run km', data: weeks.map(w => w.km), backgroundColor:'#378ADD', yAxisID:'y', borderRadius:3},
+        {label:'Gym sessions', data: weeks.map(w => w.gym), backgroundColor:'#BA7517', yAxisID:'y1', borderRadius:3}
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c => c.dataset.label+': '+c.raw}}},
+      scales: {
+        y:  {position:'left',  title:{display:true,text:'km',font:{size:9}}, ticks:{font:{size:9}}, beginAtZero:true},
+        y1: {position:'right', title:{display:true,text:'gym',font:{size:9}}, ticks:{font:{size:9}, stepSize:1}, beginAtZero:true, max:5, grid:{drawOnChartArea:false}},
+        x:  {ticks:{font:{size:9}, maxRotation:45, autoSkip:false}}
+      }
+    }
+  });
+}
+
 let golfInited = false, gymInited = false;
+const chartInited = {running:false, golf:false, gym:false};
 function showSection(name, btn) {
   document.querySelectorAll('.section-tab').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
@@ -687,7 +807,25 @@ function showSection(name, btn) {
     loadGym().catch(e => console.log('Gym load failed:', e));
     gymInited = true;
   }
+  if (name === 'running' && !chartInited.running && runs.length) {
+    showChart('pace', document.querySelector('#section-running .tab'));
+    chartInited.running = true;
+  }
+  if (name === 'golf' && !chartInited.golf && rounds.length) {
+    showGolfChart('score', document.querySelector('#section-golf .tab'));
+    chartInited.golf = true;
+  }
+  if (name === 'gym' && !chartInited.gym && gymVolume.length) {
+    showGymChart('volume', document.querySelector('#section-gym .tab'));
+    chartInited.gym = true;
+  }
 }
+
+// Eagerly load golf and gym so Home tab has all three data sources
+loadGolf().catch(e => console.log('Golf load failed:', e));
+golfInited = true;
+loadGym().catch(e => console.log('Gym load failed:', e));
+gymInited = true;
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

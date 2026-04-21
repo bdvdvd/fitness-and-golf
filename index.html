@@ -214,6 +214,30 @@ tr.race-row td { font-weight: 500; background: #fff5f5; }
   <div class="workout-list" id="workout-list"></div>
 </div>
 
+<div class="workout-box">
+  <h3 style="display:flex;justify-content:space-between;align-items:center;">
+    <span>Log workout</span>
+    <button class="day-btn" style="padding:3px 10px;" onclick="toggleLogger()" id="logger-toggle-btn">Open</button>
+  </h3>
+  <div id="logger-body" style="display:none;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+      <label style="font-size:10px;color:#888;">Date<input type="date" id="log-date" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
+      <label style="font-size:10px;color:#888;">Rotation<input type="text" id="log-rotation" placeholder="e.g. R5" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
+    </div>
+    <div class="gym-day-picker" id="logger-day-picker">
+      <button class="day-btn active" onclick="loadLoggerDay('Day 1',this)">Day 1</button>
+      <button class="day-btn" onclick="loadLoggerDay('Day 2',this)">Day 2</button>
+      <button class="day-btn" onclick="loadLoggerDay('Day 3',this)">Day 3</button>
+    </div>
+    <div id="logger-exercises"></div>
+    <div style="display:flex;gap:6px;margin-top:8px;">
+      <button class="day-btn" onclick="addLoggerRow()" style="flex:1;">+ Add exercise</button>
+      <button class="day-btn" style="flex:1;background:#1D9E75;color:#fff;border-color:#1D9E75;" onclick="submitLogger()">Save</button>
+    </div>
+    <div id="logger-status" style="font-size:11px;color:#888;margin-top:6px;min-height:14px;"></div>
+  </div>
+</div>
+
 <div class="pr-box">
   <h3>Key lift PRs</h3>
   <div class="pr-grid" id="pr-grid"></div>
@@ -710,6 +734,109 @@ function showGymChart(type, btn) {
       plugins:{legend:{display:false}, tooltip:{callbacks:{label:c => c.dataset.label+': '+c.raw}}},
       scales:{y:{min:0, max:5, title:{display:true,text:'sessions',font:{size:9}}, ticks:{font:{size:9}, stepSize:1}}, x:{ticks:{font:{size:9}, maxRotation:45, autoSkip:false}}}
     }});
+  }
+}
+
+// --- Workout logger ---
+let exerciseOptions = []; // list of exercise names (Raw name) from Exercises tab
+let loggerInited = false;
+
+function toggleLogger() {
+  const body = document.getElementById('logger-body');
+  const btn = document.getElementById('logger-toggle-btn');
+  if (body.style.display === 'none') {
+    body.style.display = 'block';
+    btn.textContent = 'Close';
+    if (!loggerInited) initLogger();
+  } else {
+    body.style.display = 'none';
+    btn.textContent = 'Open';
+  }
+}
+
+async function initLogger() {
+  loggerInited = true;
+  const today = new Date();
+  document.getElementById('log-date').value = today.toISOString().split('T')[0];
+  try {
+    const ex = await fetch(SHEETS_URL + '&sheet=Exercises').then(r => r.json());
+    exerciseOptions = Array.from(new Set(ex.map(e => e['Raw name']).filter(Boolean))).sort();
+  } catch(e) { exerciseOptions = []; }
+  loadLoggerDay('Day 1', document.querySelector('#logger-day-picker .day-btn'));
+}
+
+function loadLoggerDay(day, btn) {
+  document.querySelectorAll('#logger-day-picker .day-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('logger-exercises').innerHTML = '';
+  (gymProgram[day] || []).forEach(e => addLoggerRow(e.ex));
+}
+
+function addLoggerRow(name) {
+  const wrap = document.getElementById('logger-exercises');
+  const row = document.createElement('div');
+  row.className = 'logger-row';
+  row.style.cssText = 'background:#f8f8f6;border-radius:8px;padding:8px;margin-bottom:6px;';
+  const datalistId = 'ex-dl';
+  const options = exerciseOptions.map(o => `<option value="${o}"></option>`).join('');
+  row.innerHTML = `
+    <div style="display:flex;gap:4px;align-items:center;margin-bottom:6px;">
+      <input list="${datalistId}" class="lg-name" value="${name || ''}" placeholder="Exercise" style="flex:1;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;">
+      <button onclick="this.closest('.logger-row').remove()" style="background:none;border:none;color:#888;font-size:18px;cursor:pointer;padding:0 6px;">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:30px repeat(4,1fr);gap:4px;align-items:center;margin-bottom:3px;">
+      <span style="font-size:9px;color:#888;">Reps</span>
+      <input type="number" class="lg-reps" data-set="1" inputmode="numeric" style="font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;min-width:0;">
+      <input type="number" class="lg-reps" data-set="2" inputmode="numeric" style="font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;min-width:0;">
+      <input type="number" class="lg-reps" data-set="3" inputmode="numeric" style="font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;min-width:0;">
+      <input type="number" class="lg-reps" data-set="4" inputmode="numeric" style="font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;min-width:0;">
+    </div>
+    <div style="display:grid;grid-template-columns:30px repeat(4,1fr);gap:4px;align-items:center;">
+      <span style="font-size:9px;color:#888;">Lbs</span>
+      <input type="number" class="lg-wt" data-set="1" inputmode="decimal" style="font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;min-width:0;">
+      <input type="number" class="lg-wt" data-set="2" inputmode="decimal" style="font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;min-width:0;">
+      <input type="number" class="lg-wt" data-set="3" inputmode="decimal" style="font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;min-width:0;">
+      <input type="number" class="lg-wt" data-set="4" inputmode="decimal" style="font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;min-width:0;">
+    </div>
+  `;
+  wrap.appendChild(row);
+  if (!document.getElementById(datalistId)) {
+    const dl = document.createElement('datalist');
+    dl.id = datalistId;
+    dl.innerHTML = options;
+    document.body.appendChild(dl);
+  }
+}
+
+async function submitLogger() {
+  const status = document.getElementById('logger-status');
+  const date = document.getElementById('log-date').value;
+  const rotation = document.getElementById('log-rotation').value.trim();
+  const day = document.querySelector('#logger-day-picker .day-btn.active').textContent.trim();
+  const rows = Array.from(document.querySelectorAll('.logger-row')).map(r => {
+    const name = r.querySelector('.lg-name').value.trim();
+    const reps = Array.from(r.querySelectorAll('.lg-reps')).map(i => i.value);
+    const wts  = Array.from(r.querySelectorAll('.lg-wt')).map(i => i.value);
+    const sets = reps.map((rep, i) => ({reps: rep, weight: wts[i]}));
+    return {name, sets};
+  }).filter(ex => ex.name && ex.sets.some(s => s.reps));
+  if (!rows.length) { status.textContent = 'Add at least one set'; status.style.color = '#E24B4A'; return; }
+  if (!date) { status.textContent = 'Pick a date'; status.style.color = '#E24B4A'; return; }
+  status.textContent = 'Saving...'; status.style.color = '#888';
+  try {
+    const res = await fetch(SHEETS_URL.split('?')[0], {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify({key:'bdv-8f3k-2026', action:'logGym', date, day, rotation, exercises: rows})
+    });
+    const data = await res.json();
+    if (data.ok) {
+      status.textContent = 'Saved ' + data.added + ' rows. Refresh Gym tab to see.'; status.style.color = '#1D9E75';
+    } else {
+      status.textContent = 'Error: ' + data.error; status.style.color = '#E24B4A';
+    }
+  } catch(e) {
+    status.textContent = 'Failed: ' + e.message; status.style.color = '#E24B4A';
   }
 }
 

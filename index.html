@@ -215,24 +215,15 @@ tr.race-row td { font-weight: 500; background: #fff5f5; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-const runs = [
-  {date:'Mar 2', type:'Easy', km:7.00, pace:5.20, hr:159, notes:'Treadmill'},
-  {date:'Mar 5', type:'Easy', km:5.01, pace:5.52, hr:162, notes:'Outdoor'},
-  {date:'Mar 7', type:'Long', km:10.01, pace:5.58, hr:153, notes:'Outdoor'},
-  {date:'Mar 10', type:'Easy', km:6.00, pace:5.47, hr:149, notes:'Treadmill'},
-  {date:'Mar 12', type:'Tempo', km:6.00, pace:5.00, hr:155, notes:'Treadmill'},
-  {date:'Mar 15', type:'Long', km:12.00, pace:5.58, hr:154, notes:'Outdoor'},
-  {date:'Mar 17', type:'Easy', km:7.00, pace:5.58, hr:159, notes:'Treadmill'},
-  {date:'Mar 20', type:'Tempo', km:7.00, pace:4.98, hr:168, notes:'Outdoor, windy'},
-  {date:'Mar 21', type:'Long', km:15.00, pace:5.68, hr:151, notes:'Outdoor, 88m'},
-  {date:'Mar 25', type:'Easy', km:7.00, pace:5.50, hr:156, notes:'Treadmill'},
-  {date:'Apr 1', type:'Easy', km:7.00, pace:5.87, hr:155, notes:'Treadmill'},
-  {date:'Apr 3', type:'Threshold', km:6.85, pace:5.28, hr:157, notes:'Garmin workout'},
-  {date:'Apr 4', type:'Long', km:13.01, pace:5.72, hr:155, notes:'Outdoor'},
-  {date:'Apr 16', type:'Easy', km:5.00, pace:6.27, hr:128, notes:'With friends'},
-  {date:'Apr 17', type:'Shakeout', km:3.30, pace:5.10, hr:164, notes:'Pre-race'},
-  {date:'Apr 19', type:'RACE', km:10.14, pace:4.68, hr:174, notes:'Sun Run 47:32'},
-];
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyU3W0ZvA5cdSmmLxSxa4OP-JJjIAOOEc6UqRphYXB1JRaedSY4mH96gNRPod672b1z/exec?key=bdv-8f3k-2026';
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDate(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return MONTHS[d.getMonth()] + ' ' + d.getDate();
+}
+
+let runs = [];
 
 const colors = {
   Easy:'#378ADD', Tempo:'#D85A30', Long:'#1D9E75',
@@ -245,19 +236,38 @@ function paceStr(p) {
   return m+':'+(s<10?'0':'')+s;
 }
 
-const tbody = document.getElementById('tbody');
-runs.forEach(r => {
-  const tr = document.createElement('tr');
-  if(r.type==='RACE') tr.className='race-row';
-  tr.innerHTML = `
-    <td>${r.date}</td>
-    <td><span class="badge" style="background:${colors[r.type]}22;color:${colors[r.type]};">${r.type}</span></td>
-    <td>${r.km.toFixed(1)} km</td>
-    <td style="font-weight:500;">${paceStr(r.pace)}/km</td>
-    <td>${r.hr}</td>
-    <td style="color:#888;">${r.notes}</td>`;
-  tbody.appendChild(tr);
-});
+function renderRunsTable() {
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  runs.forEach(r => {
+    const tr = document.createElement('tr');
+    if(r.type==='RACE') tr.className='race-row';
+    const color = colors[r.type] || '#888';
+    tr.innerHTML = `
+      <td>${r.date}</td>
+      <td><span class="badge" style="background:${color}22;color:${color};">${r.type}</span></td>
+      <td>${r.km.toFixed(1)} km</td>
+      <td style="font-weight:500;">${paceStr(r.pace)}/km</td>
+      <td>${r.hr || ''}</td>
+      <td style="color:#888;">${r.notes || ''}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+async function loadRuns() {
+  const data = await fetch(SHEETS_URL + '&sheet=Runs').then(r => r.json());
+  // Keep last 30 runs for a readable chart
+  runs = data.slice(-30).map(r => ({
+    date: fmtDate(r.Date),
+    type: r.Type || 'Easy',
+    km: Number(r.Km) || 0,
+    pace: Number(r.Pace) || 0,
+    hr: Number(r.HR) || null,
+    notes: r.Notes || ''
+  }));
+  renderRunsTable();
+  showChart('pace', document.querySelector('#section-running .tab'));
+}
 
 let chart;
 function setLegend(items) {
@@ -331,18 +341,11 @@ function showChart(type, btn) {
     },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
   }
 }
-showChart('pace', document.querySelector('#section-running .tab'));
+loadRuns().catch(e => console.log('Runs load failed:', e));
 
 // --- Golf data & charts ---
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyU3W0ZvA5cdSmmLxSxa4OP-JJjIAOOEc6UqRphYXB1JRaedSY4mH96gNRPod672b1z/exec?key=bdv-8f3k-2026';
 let rounds = [];
 
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-function fmtDate(iso) {
-  const d = new Date(iso);
-  if (isNaN(d)) return iso;
-  return MONTHS[d.getMonth()] + ' ' + d.getDate();
-}
 function shortCourse(name) {
   if (!name) return '';
   return name.replace(/\s*(GC|Golf Club|Country Club|CC)\s*$/i, '').replace('Pitt Meadows','Pitt');

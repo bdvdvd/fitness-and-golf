@@ -225,6 +225,10 @@ function fmtDate(iso) {
 
 let runs = [];
 
+// Mobile caps charts at last 15 runs; desktop shows all 30. Table always shows full set.
+function isMobile() { return window.matchMedia('(max-width: 460px)').matches; }
+function chartRuns() { return isMobile() ? runs.slice(-15) : runs; }
+
 const colors = {
   Easy:'#378ADD', Tempo:'#D85A30', Long:'#1D9E75',
   Threshold:'#BA7517', Shakeout:'#D4537E', RACE:'#E24B4A'
@@ -281,16 +285,17 @@ function showChart(type, btn) {
   if(btn) btn.classList.add('active');
   if(chart) chart.destroy();
   const ctx = document.getElementById('chart').getContext('2d');
-  const labels = runs.map(r=>r.date);
+  const data = chartRuns();
+  const labels = data.map(r=>r.date);
 
   if(type==='pace') {
     const byType = {};
-    runs.forEach(r => {
-      if(!byType[r.type]) byType[r.type] = Array(runs.length).fill(null);
-      byType[r.type][runs.indexOf(r)] = r.pace;
+    data.forEach((r, i) => {
+      if(!byType[r.type]) byType[r.type] = Array(data.length).fill(null);
+      byType[r.type][i] = r.pace;
     });
-    const datasets = Object.entries(byType).map(([t,data])=>({
-      label:t, data, borderColor:colors[t], backgroundColor:colors[t]+'33',
+    const datasets = Object.entries(byType).map(([t,d])=>({
+      label:t, data:d, borderColor:colors[t], backgroundColor:colors[t]+'33',
       pointRadius:4, pointHoverRadius:6,
       borderDash:t==='Tempo'?[5,3]:t==='Threshold'?[8,4]:t==='Shakeout'?[2,2]:[],
       spanGaps:false, tension:0.3, fill:false
@@ -307,8 +312,8 @@ function showChart(type, btn) {
   } else if(type==='hr') {
     setLegend([{c:'#E24B4A',l:'avg HR'},{c:'#E24B4A77',l:'LT (177 bpm)'}]);
     chart = new Chart(ctx,{type:'line',data:{labels,datasets:[
-      {label:'Avg HR',data:runs.map(r=>r.hr),borderColor:'#E24B4A',backgroundColor:'#E24B4A22',pointRadius:4,tension:0.3,fill:true},
-      {label:'LT',data:Array(runs.length).fill(177),borderColor:'#E24B4A',borderDash:[6,4],pointRadius:0,borderWidth:1.5,fill:false}
+      {label:'Avg HR',data:data.map(r=>r.hr),borderColor:'#E24B4A',backgroundColor:'#E24B4A22',pointRadius:4,tension:0.3,fill:true},
+      {label:'LT',data:Array(data.length).fill(177),borderColor:'#E24B4A',borderDash:[6,4],pointRadius:0,borderWidth:1.5,fill:false}
     ]},options:{
       responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+Math.round(c.raw)+' bpm'}}},
@@ -320,8 +325,8 @@ function showChart(type, btn) {
   } else if(type==='distance') {
     setLegend(Object.keys(colors).map(t=>({c:colors[t],l:t})));
     chart = new Chart(ctx,{type:'bar',data:{labels,datasets:[{
-      label:'Distance',data:runs.map(r=>r.km),
-      backgroundColor:runs.map(r=>colors[r.type]),borderRadius:3
+      label:'Distance',data:data.map(r=>r.km),
+      backgroundColor:data.map(r=>colors[r.type]),borderRadius:3
     }]},options:{
       responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw.toFixed(1)+' km'}}},
@@ -332,7 +337,7 @@ function showChart(type, btn) {
     }});
   } else {
     const counts={};
-    runs.forEach(r=>counts[r.type]=(counts[r.type]||0)+1);
+    data.forEach(r=>counts[r.type]=(counts[r.type]||0)+1);
     const types=Object.keys(counts);
     setLegend(types.map(t=>({c:colors[t],l:`${t} (${counts[t]})`})));
     chart = new Chart(ctx,{type:'doughnut',data:{

@@ -271,6 +271,35 @@ tr.race-row td { font-weight: 500; background: #fff5f5; }
   </table>
 </div>
 
+<h2 style="font-size:16px;font-weight:500;margin-top:24px;margin-bottom:6px;">Practice</h2>
+<p class="subtitle">Target: 3 hrs/week</p>
+
+<div class="metrics-row">
+  <div class="mc"><div class="mc-label">This week</div><div class="mc-val" id="prac-wk-hrs">-</div><div class="mc-sub" id="prac-wk-sub">of 3 hr target</div></div>
+  <div class="mc"><div class="mc-label">4-wk avg</div><div class="mc-val" id="prac-4wk-avg">-</div><div class="mc-sub">hrs/week</div></div>
+  <div class="mc"><div class="mc-label">Sessions this month</div><div class="mc-val" id="prac-mo-cnt">-</div><div class="mc-sub" id="prac-mo-hrs">-</div></div>
+</div>
+
+<div class="workout-box">
+  <div style="font-size:11px;color:#888;margin-bottom:6px;">This week progress</div>
+  <div style="background:#f0f0f0;border-radius:6px;height:14px;overflow:hidden;">
+    <div id="prac-wk-bar" style="background:#1b5a19;height:100%;width:0%;transition:width 0.3s;"></div>
+  </div>
+  <div id="prac-wk-label" style="font-size:10px;color:#888;margin-top:4px;text-align:right;">0 / 180 min</div>
+</div>
+
+<div class="workout-box">
+  <div style="font-size:11px;color:#888;margin-bottom:8px;">Focus breakdown (last 8 weeks)</div>
+  <div id="prac-focus-list"></div>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Date</th><th>Location</th><th>Duration</th><th>Focus</th><th>Notes</th></tr></thead>
+    <tbody id="practice-tbody"></tbody>
+  </table>
+</div>
+
 </div><!-- /section-golf -->
 
 <div class="section" id="section-gym">
@@ -955,7 +984,70 @@ async function loadPractice() {
     drills:   r.Drills || '',
     notes:    r.Notes || ''
   })).sort((a,b) => a.rawDate - b.rawDate);
+  renderPracticeDashboard();
   homeState.practice = true; tryRenderHome();
+}
+
+function renderPracticeDashboard() {
+  const ws = weekStartDate();
+  const wkMin = practice.filter(p => p.rawDate >= ws).reduce((s,p) => s + (p.duration || 0), 0);
+  const wkHrs = wkMin / 60;
+  document.getElementById('prac-wk-hrs').textContent = wkHrs.toFixed(1) + ' hr';
+  document.getElementById('prac-wk-sub').textContent = 'of 3 hr target';
+  const pct = Math.min(100, Math.round((wkMin / 180) * 100));
+  document.getElementById('prac-wk-bar').style.width = pct + '%';
+  document.getElementById('prac-wk-label').textContent = wkMin + ' / 180 min (' + pct + '%)';
+
+  // 4-week avg
+  const fourWksAgo = new Date(ws); fourWksAgo.setDate(ws.getDate() - 21);
+  const fourWkMin = practice.filter(p => p.rawDate >= fourWksAgo).reduce((s,p) => s + (p.duration || 0), 0);
+  document.getElementById('prac-4wk-avg').textContent = (fourWkMin / 60 / 4).toFixed(1);
+
+  // This month
+  const today = new Date();
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const moSessions = practice.filter(p => p.rawDate >= monthStart);
+  const moMin = moSessions.reduce((s,p) => s + (p.duration || 0), 0);
+  document.getElementById('prac-mo-cnt').textContent = moSessions.length;
+  document.getElementById('prac-mo-hrs').textContent = (moMin / 60).toFixed(1) + ' hrs';
+
+  // Focus breakdown (last 8 weeks)
+  const eightWksAgo = new Date(ws); eightWksAgo.setDate(ws.getDate() - 49);
+  const recent = practice.filter(p => p.rawDate >= eightWksAgo);
+  const focusMin = {};
+  recent.forEach(p => {
+    if (!p.focus) return;
+    const mins = p.duration || 0;
+    const tags = p.focus.split(',').map(t => t.trim()).filter(Boolean);
+    if (!tags.length) return;
+    const share = mins / tags.length;
+    tags.forEach(t => { focusMin[t] = (focusMin[t] || 0) + share; });
+  });
+  const total = Object.values(focusMin).reduce((s,v) => s + v, 0);
+  const list = document.getElementById('prac-focus-list');
+  if (total === 0) {
+    list.innerHTML = '<div style="font-size:11px;color:#aaa;">No practice logged yet</div>';
+  } else {
+    const entries = Object.entries(focusMin).sort((a,b) => b[1] - a[1]);
+    list.innerHTML = entries.map(([name, mins]) => {
+      const pct = Math.round((mins / total) * 100);
+      return `<div style="margin-bottom:6px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px;"><span>${name}</span><span style="color:#888;">${Math.round(mins)} min · ${pct}%</span></div>
+        <div style="background:#f0f0f0;border-radius:4px;height:8px;overflow:hidden;"><div style="background:#378ADD;height:100%;width:${pct}%;"></div></div>
+      </div>`;
+    }).join('');
+  }
+
+  // Recent table
+  const tbody = document.getElementById('practice-tbody');
+  const sorted = [...practice].sort((a,b) => b.rawDate - a.rawDate).slice(0, 20);
+  tbody.innerHTML = sorted.map(p => `<tr>
+    <td>${p.date}</td>
+    <td>${p.location}</td>
+    <td>${p.duration ? p.duration + ' min' : ''}</td>
+    <td>${p.focus}</td>
+    <td>${p.notes}</td>
+  </tr>`).join('');
 }
 
 // --- Workout logger ---

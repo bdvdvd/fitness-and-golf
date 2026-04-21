@@ -56,6 +56,8 @@ tr.race-row td { font-weight: 500; background: #fff5f5; }
 .gym-day-picker { display: flex; gap: 6px; margin-bottom: 10px; }
 .day-btn { flex: 1; background: #fff; border: 0.5px solid #ddd; border-radius: 8px; padding: 8px; font-size: 12px; font-weight: 500; color: #888; cursor: pointer; font-family: inherit; }
 .day-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.focus-btn { background: #fff; border: 0.5px solid #ddd; border-radius: 14px; padding: 5px 10px; font-size: 11px; color: #888; cursor: pointer; font-family: inherit; }
+.focus-btn.active { background: #1b5a19; color: #fff; border-color: #1b5a19; }
 .workout-box { background: #fff; border: 0.5px solid #e8e8e8; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
 .workout-box h3 { font-size: 12px; font-weight: 500; color: #1a1a1a; margin-bottom: 8px; }
 .workout-list { display: flex; flex-direction: column; gap: 6px; }
@@ -96,6 +98,7 @@ tr.race-row td { font-weight: 500; background: #fff5f5; }
 <div class="metrics-row">
   <div class="mc"><div class="mc-label">Latest round</div><div class="mc-val" id="home-golf-val">-</div><div class="mc-sub" id="home-golf-sub">-</div></div>
   <div class="mc"><div class="mc-label">Handicap</div><div class="mc-val">10.3</div><div class="mc-sub">target 7.0</div></div>
+  <div class="mc"><div class="mc-label">Latest practice</div><div class="mc-val" id="home-practice-val">-</div><div class="mc-sub" id="home-practice-sub">-</div></div>
 </div>
 
 <div class="legend" id="home-legend"></div>
@@ -206,6 +209,38 @@ tr.race-row td { font-weight: 500; background: #fff5f5; }
     <label style="font-size:10px;color:#888;display:block;margin-bottom:6px;">Notes<textarea id="g-notes" rows="2" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;font-family:inherit;resize:vertical;"></textarea></label>
     <button class="day-btn" style="width:100%;background:#1D9E75;color:#fff;border-color:#1D9E75;" onclick="submitGolfLogger()">Save round</button>
     <div id="golf-logger-status" style="font-size:11px;color:#888;margin-top:6px;min-height:14px;"></div>
+  </div>
+</div>
+
+<div class="workout-box">
+  <h3 style="display:flex;justify-content:space-between;align-items:center;">
+    <span>Log practice</span>
+    <button class="day-btn" style="padding:3px 10px;" onclick="togglePracticeLogger()" id="practice-logger-toggle-btn">Open</button>
+  </h3>
+  <div id="practice-logger-body" style="display:none;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+      <label style="font-size:10px;color:#888;">Date<input type="date" id="p-date" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
+      <label style="font-size:10px;color:#888;">Location<select id="p-location" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;background:#fff;"><option>Range</option><option>Short Game</option><option>Putting Green</option><option>Course</option><option>Simulator</option></select></label>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+      <label style="font-size:10px;color:#888;">Duration (min)<input type="number" id="p-duration" inputmode="numeric" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
+      <label style="font-size:10px;color:#888;">Balls hit<input type="number" id="p-balls" inputmode="numeric" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
+    </div>
+    <div style="background:#f8f8f6;border-radius:8px;padding:8px;margin-bottom:6px;">
+      <div style="font-size:10px;color:#888;margin-bottom:4px;">Focus (tap any that apply)</div>
+      <div id="p-focus-wrap" style="display:flex;flex-wrap:wrap;gap:4px;">
+        <button type="button" class="focus-btn" data-focus="Driver">Driver</button>
+        <button type="button" class="focus-btn" data-focus="Irons">Irons</button>
+        <button type="button" class="focus-btn" data-focus="Wedges">Wedges</button>
+        <button type="button" class="focus-btn" data-focus="Chipping">Chipping</button>
+        <button type="button" class="focus-btn" data-focus="Putting">Putting</button>
+        <button type="button" class="focus-btn" data-focus="Bunker">Bunker</button>
+      </div>
+    </div>
+    <label style="font-size:10px;color:#888;display:block;margin-bottom:6px;">Drills<textarea id="p-drills" rows="2" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;font-family:inherit;resize:vertical;" placeholder="What drills did you work on?"></textarea></label>
+    <label style="font-size:10px;color:#888;display:block;margin-bottom:6px;">Notes<textarea id="p-notes" rows="2" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;font-family:inherit;resize:vertical;"></textarea></label>
+    <button class="day-btn" style="width:100%;background:#1D9E75;color:#fff;border-color:#1D9E75;" onclick="submitPracticeLogger()">Save practice</button>
+    <div id="practice-logger-status" style="font-size:11px;color:#888;margin-top:6px;min-height:14px;"></div>
   </div>
 </div>
 
@@ -850,6 +885,79 @@ async function submitGolfLogger() {
   }
 }
 
+// --- Practice logger ---
+let practiceLoggerInited = false;
+function togglePracticeLogger() {
+  const body = document.getElementById('practice-logger-body');
+  const btn = document.getElementById('practice-logger-toggle-btn');
+  if (body.style.display === 'none') {
+    body.style.display = 'block';
+    btn.textContent = 'Close';
+    if (!practiceLoggerInited) {
+      document.getElementById('p-date').value = new Date().toISOString().split('T')[0];
+      document.querySelectorAll('#p-focus-wrap .focus-btn').forEach(b => {
+        b.addEventListener('click', () => b.classList.toggle('active'));
+      });
+      practiceLoggerInited = true;
+    }
+  } else {
+    body.style.display = 'none';
+    btn.textContent = 'Open';
+  }
+}
+
+async function submitPracticeLogger() {
+  const status = document.getElementById('practice-logger-status');
+  const focus = Array.from(document.querySelectorAll('#p-focus-wrap .focus-btn.active')).map(b => b.dataset.focus).join(', ');
+  const payload = {
+    key: 'bdv-8f3k-2026',
+    action: 'logPractice',
+    date:     document.getElementById('p-date').value,
+    location: document.getElementById('p-location').value,
+    duration: numOrEmpty('p-duration'),
+    balls:    numOrEmpty('p-balls'),
+    focus:    focus,
+    drills:   document.getElementById('p-drills').value.trim(),
+    notes:    document.getElementById('p-notes').value.trim()
+  };
+  if (!payload.date) { status.textContent = 'Pick a date'; status.style.color = '#E24B4A'; return; }
+  status.textContent = 'Saving...'; status.style.color = '#888';
+  try {
+    const res = await fetch(SHEETS_URL.split('?')[0], {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.ok) {
+      status.textContent = 'Saved.'; status.style.color = '#1D9E75';
+      loadPractice().catch(() => {});
+    } else {
+      status.textContent = 'Error: ' + data.error; status.style.color = '#E24B4A';
+    }
+  } catch(e) {
+    status.textContent = 'Failed: ' + e.message; status.style.color = '#E24B4A';
+  }
+}
+
+// --- Practice data load ---
+let practice = [];
+async function loadPractice() {
+  const res = await fetch(SHEETS_URL + '&sheet=Practice');
+  const data = await res.json();
+  practice = data.map(r => ({
+    rawDate:  new Date(r.Date),
+    date:     fmtDate(r.Date),
+    location: r.Location || '',
+    duration: numOrNull(r.Duration),
+    focus:    r.Focus || '',
+    balls:    numOrNull(r['Balls Hit']),
+    drills:   r.Drills || '',
+    notes:    r.Notes || ''
+  })).sort((a,b) => a.rawDate - b.rawDate);
+  homeState.practice = true; tryRenderHome();
+}
+
 // --- Workout logger ---
 let exerciseOptions = []; // list of exercise names (Raw name) from Exercises tab
 let loggerInited = false;
@@ -954,7 +1062,7 @@ async function submitLogger() {
 }
 
 // --- Home / summary ---
-const homeState = {runs:false, golf:false, gym:false};
+const homeState = {runs:false, golf:false, gym:false, practice:false};
 let homeChart;
 
 function weekStartDate() {
@@ -991,6 +1099,14 @@ function tryRenderHome() {
     if (last) {
       document.getElementById('home-golf-val').textContent = last.score;
       document.getElementById('home-golf-sub').textContent = last.date + ' · ' + last.course;
+    }
+  }
+  if (homeState.practice) {
+    const last = practice[practice.length - 1];
+    if (last) {
+      const daysAgo = Math.floor((Date.now() - last.rawDate) / 86400000);
+      document.getElementById('home-practice-val').textContent = daysAgo === 0 ? 'today' : daysAgo + 'd ago';
+      document.getElementById('home-practice-sub').textContent = last.date + ' · ' + last.location;
     }
   }
   if (homeState.runs && homeState.gym) renderHomeChart();
@@ -1066,6 +1182,7 @@ loadGolf().catch(e => console.log('Golf load failed:', e));
 golfInited = true;
 loadGym().catch(e => console.log('Gym load failed:', e));
 gymInited = true;
+loadPractice().catch(e => console.log('Practice load failed:', e));
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

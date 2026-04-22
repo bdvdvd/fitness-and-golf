@@ -103,12 +103,68 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 #section-gym     { --accent: var(--gym); --accent-ink: var(--gym-ink); --accent-wash: var(--gym-wash); }
 #section-golf    { --accent: var(--golf); --accent-ink: var(--golf-ink); --accent-wash: var(--golf-wash); }
 #section-home    { --accent: #1a1a1a; }
+
+/* Settings gear + modal */
+.gear-btn { position: fixed; top: 12px; right: 12px; width: 34px; height: 34px; border-radius: 50%; background: #fff; border: 0.5px solid var(--border); cursor: pointer; font-size: 16px; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.gear-btn:hover { background: #f4f4f2; }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 200; align-items: flex-start; justify-content: center; padding: 16px; overflow-y: auto; }
+.modal-overlay.show { display: flex; }
+.modal { background: #fff; border-radius: 14px; padding: 18px; width: 100%; max-width: 460px; margin-top: 32px; }
+.modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+.modal h3 { font-size: 12px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.04em; margin: 14px 0 6px; }
+.modal label { display: block; font-size: 11px; color: #888; margin-bottom: 8px; }
+.modal label span { display: block; margin-bottom: 3px; }
+.modal input { width: 100%; font-size: 13px; padding: 7px 9px; border: 0.5px solid #ddd; border-radius: 7px; font-family: inherit; }
+.modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+.modal-actions button { flex: 1; padding: 9px; border-radius: 8px; border: 0.5px solid #ddd; background: #fff; font-size: 13px; font-weight: 500; cursor: pointer; }
+.modal-actions button.primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
 </style>
 </head>
 <body>
 
 <div id="viewonly-banner" style="display:none;background:#f0f7ff;border:0.5px solid #b5d4f4;border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:#185fa5;">
   <strong>View only:</strong> This is a read-only showcase. Loggers are disabled.
+</div>
+
+<button class="gear-btn" id="gear-btn" onclick="openSettingsModal()" aria-label="Settings">&#9881;</button>
+
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <h2>Settings</h2>
+
+    <h3>Running</h3>
+    <label><span>Race name</span><input id="s-runRace" type="text"></label>
+    <div class="modal-row">
+      <label><span>Race date</span><input id="s-runRaceDate" type="text" placeholder="Apr 26"></label>
+      <label><span>Goal time</span><input id="s-runGoalTime" type="text" placeholder="Sub 1:45:00"></label>
+    </div>
+    <div class="modal-row">
+      <label><span>VO2 max</span><input id="s-vo2max" type="text"></label>
+      <label><span>LT pace</span><input id="s-ltPace" type="text" placeholder="4:37/km"></label>
+    </div>
+
+    <h3>Golf</h3>
+    <label><span>Goal text</span><input id="s-golfGoal" type="text"></label>
+    <div class="modal-row">
+      <label><span>Score target</span><input id="s-golfTargetScore" type="text"></label>
+      <label><span>3-putts target</span><input id="s-golfTarget3Putts" type="text"></label>
+    </div>
+    <div class="modal-row">
+      <label><span>FIR target (%)</span><input id="s-golfTargetFIR" type="text"></label>
+      <label><span>GIR target (%)</span><input id="s-golfTargetGIR" type="text"></label>
+    </div>
+    <label><span>Practice target (hrs/wk)</span><input id="s-practiceTargetHours" type="text"></label>
+
+    <h3>Gym</h3>
+    <label><span>Goal text</span><input id="s-gymGoal" type="text"></label>
+
+    <div class="modal-actions">
+      <button onclick="closeSettingsModal()">Cancel</button>
+      <button class="primary" onclick="saveSettingsToSheet()">Save</button>
+    </div>
+    <div id="settings-status" style="font-size:11px;color:#888;margin-top:8px;min-height:14px;"></div>
+  </div>
 </div>
 <div class="section-nav">
   <button class="section-tab active" onclick="showSection('home',this)">Home</button>
@@ -149,11 +205,11 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
   <div class="mc"><div class="mc-label">Total runs</div><div class="mc-val" id="run-total-cnt">-</div><div class="mc-sub" id="run-total-cnt-sub">all time</div></div>
   <div class="mc"><div class="mc-label">Total km</div><div class="mc-val" id="run-total-km">-</div><div class="mc-sub" id="run-total-km-sub">all time</div></div>
   <div class="mc"><div class="mc-label">Sun Run</div><div class="mc-val">47:32</div><div class="mc-sub">missed PR by 25s</div></div>
-  <div class="mc"><div class="mc-label">VO2 max</div><div class="mc-val">52</div><div class="mc-sub">LT: 4:37/km</div></div>
+  <div class="mc"><div class="mc-label">VO2 max</div><div class="mc-val" id="vo2max-val">52</div><div class="mc-sub" id="vo2max-sub">LT: 4:37/km</div></div>
 </div>
 
 <div class="eugene-box">
-  <h3>Eugene Half Marathon — Apr 26 · Goal: Sub 1:45:00</h3>
+  <h3 id="race-box-title">Eugene Half Marathon - Apr 26 · Goal: Sub 1:45:00</h3>
   <div class="eugene-stats">
     <div class="eugene-stat">Target pace<span>4:59/km</span></div>
     <div class="eugene-stat">LT pace<span>4:37/km</span></div>
@@ -184,7 +240,7 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 <div class="section" id="section-golf">
 
 <h1>Golf</h1>
-<p class="subtitle">Pitt Meadows GC · Goal: 7 handicap (current 10.3)</p>
+<p class="subtitle" id="golf-subtitle">Pitt Meadows GC · Goal: 7 handicap (current 10.3)</p>
 
 <div class="metrics-row">
   <div class="mc"><div class="mc-label">Rounds</div><div class="mc-val">5</div><div class="mc-sub">this season</div></div>
@@ -281,10 +337,10 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 <div class="goal-box">
   <h3>Road to 7 handicap · from 10.3</h3>
   <div class="goal-stats">
-    <div class="goal-stat">Score target<span>≤ 82</span></div>
-    <div class="goal-stat">FIR target<span>60%</span></div>
-    <div class="goal-stat">GIR target<span>40%</span></div>
-    <div class="goal-stat">3-putts target<span>≤ 1/rd</span></div>
+    <div class="goal-stat">Score target<span id="golf-target-score">≤ 82</span></div>
+    <div class="goal-stat">FIR target<span id="golf-target-fir">60%</span></div>
+    <div class="goal-stat">GIR target<span id="golf-target-gir">40%</span></div>
+    <div class="goal-stat">3-putts target<span id="golf-target-3putts">≤ 1/rd</span></div>
   </div>
 </div>
 
@@ -306,7 +362,7 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 </div>
 
 <h2 style="font-size:16px;font-weight:500;margin-top:24px;margin-bottom:6px;">Practice</h2>
-<p class="subtitle">Target: 3 hrs/week</p>
+<p class="subtitle" id="practice-subtitle">Target: 3 hrs/week</p>
 
 <div class="metrics-row">
   <div class="mc"><div class="mc-label">This week</div><div class="mc-val" id="prac-wk-hrs">-</div><div class="mc-sub" id="prac-wk-sub">of 3 hr target</div></div>
@@ -339,7 +395,7 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 <div class="section" id="section-gym">
 
 <h1>Gym</h1>
-<p class="subtitle">3x full-body per week · 4-week rotations</p>
+<p class="subtitle" id="gym-subtitle">3x full-body per week · 4-week rotations</p>
 
 <div class="metrics-row">
   <div class="mc"><div class="mc-label">This week</div><div class="mc-val" id="gym-week">0</div><div class="mc-sub">of 3 target</div></div>
@@ -1359,6 +1415,102 @@ function showSection(name, btn) {
   }
 }
 
+// ---- Settings (editable from gear icon) ----
+let SETTINGS = {};
+
+async function loadSettings() {
+  try {
+    const res = await fetch(SHEETS_URL + '&sheet=Settings');
+    const rows = await res.json();
+    const s = {};
+    rows.forEach(r => { if (r.Key) s[r.Key] = r.Value; });
+    SETTINGS = s;
+    renderSettings();
+  } catch (e) {
+    console.log('Settings load failed:', e);
+  }
+}
+
+function renderSettings() {
+  const s = SETTINGS;
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val != null && val !== '') el.textContent = val; };
+
+  // Running
+  if (s.runRace || s.runRaceDate || s.runGoalTime) {
+    set('race-box-title', `${s.runRace || ''} - ${s.runRaceDate || ''} · Goal: ${s.runGoalTime || ''}`);
+  }
+  set('vo2max-val', s.vo2max);
+  if (s.ltPace) set('vo2max-sub', 'LT: ' + s.ltPace);
+
+  // Golf
+  set('golf-subtitle', s.golfGoal);
+  if (s.golfTargetScore) set('golf-target-score', '≤ ' + s.golfTargetScore);
+  if (s.golfTargetFIR) set('golf-target-fir', s.golfTargetFIR + '%');
+  if (s.golfTargetGIR) set('golf-target-gir', s.golfTargetGIR + '%');
+  if (s.golfTarget3Putts) set('golf-target-3putts', '≤ ' + s.golfTarget3Putts + '/rd');
+  if (s.practiceTargetHours) {
+    set('practice-subtitle', 'Target: ' + s.practiceTargetHours + ' hrs/week');
+    const sub = document.getElementById('prac-wk-sub');
+    if (sub) sub.textContent = 'of ' + s.practiceTargetHours + ' hr target';
+  }
+
+  // Gym
+  set('gym-subtitle', s.gymGoal);
+}
+
+function openSettingsModal() {
+  const s = SETTINGS;
+  const fill = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  fill('s-runRace', s.runRace);
+  fill('s-runRaceDate', s.runRaceDate);
+  fill('s-runGoalTime', s.runGoalTime);
+  fill('s-vo2max', s.vo2max);
+  fill('s-ltPace', s.ltPace);
+  fill('s-golfGoal', s.golfGoal);
+  fill('s-golfTargetScore', s.golfTargetScore);
+  fill('s-golfTargetFIR', s.golfTargetFIR);
+  fill('s-golfTargetGIR', s.golfTargetGIR);
+  fill('s-golfTarget3Putts', s.golfTarget3Putts);
+  fill('s-practiceTargetHours', s.practiceTargetHours);
+  fill('s-gymGoal', s.gymGoal);
+  document.getElementById('settings-status').textContent = '';
+  document.getElementById('settings-modal').classList.add('show');
+}
+
+function closeSettingsModal() {
+  document.getElementById('settings-modal').classList.remove('show');
+}
+
+async function saveSettingsToSheet() {
+  const status = document.getElementById('settings-status');
+  status.textContent = 'Saving...';
+  const keys = ['runRace','runRaceDate','runGoalTime','vo2max','ltPace','golfGoal','golfTargetScore','golfTargetFIR','golfTargetGIR','golfTarget3Putts','practiceTargetHours','gymGoal'];
+  const updates = {};
+  keys.forEach(k => {
+    const el = document.getElementById('s-' + k);
+    if (el) updates[k] = el.value;
+  });
+  try {
+    const res = await fetch(SHEETS_URL.split('?')[0], {
+      method: 'POST',
+      body: JSON.stringify({ key: 'bdv-8f3k-2026', action: 'saveSettings', settings: updates })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      Object.assign(SETTINGS, updates);
+      renderSettings();
+      status.textContent = 'Saved.';
+      setTimeout(closeSettingsModal, 600);
+    } else {
+      status.textContent = 'Error: ' + (data.error || 'unknown');
+    }
+  } catch (e) {
+    status.textContent = 'Error: ' + e.message;
+  }
+}
+
+loadSettings();
+
 // View-only mode: hide loggers and disable writes
 const VIEW_ONLY = new URLSearchParams(location.search).get('viewonly') === '1';
 if (VIEW_ONLY) {
@@ -1368,6 +1520,8 @@ if (VIEW_ONLY) {
     const btn = document.getElementById(id);
     if (btn) btn.closest('.workout-box').style.display = 'none';
   });
+  const gear = document.getElementById('gear-btn');
+  if (gear) gear.style.display = 'none';
 }
 
 // Eagerly load golf and gym so Home tab has all three data sources

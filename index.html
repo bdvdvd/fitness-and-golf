@@ -247,7 +247,7 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 
 <div class="table-wrap">
   <table>
-    <thead><tr><th>Date</th><th>Type</th><th>Dist</th><th>Pace</th><th>HR</th><th>Notes</th></tr></thead>
+    <thead><tr><th>Date</th><th>Type</th><th>Dist</th><th>Pace</th><th>HR</th><th>Elev</th><th>Notes</th></tr></thead>
     <tbody id="tbody"></tbody>
   </table>
 </div>
@@ -571,31 +571,43 @@ function renderRunsTable() {
     const tr = document.createElement('tr');
     if(r.type==='RACE') tr.className='race-row';
     const color = colors[r.type] || '#888';
+    const indoorBadge = r.indoor ? ` <span class="badge" style="background:#88888822;color:#666;margin-left:3px;">Indoor</span>` : '';
+    const elev = r.elevation ? '+' + r.elevation + 'm' : '';
     tr.innerHTML = `
       <td>${r.date}</td>
-      <td><span class="badge" style="background:${color}22;color:${color};">${r.type}</span></td>
+      <td><span class="badge" style="background:${color}22;color:${color};">${r.type}</span>${indoorBadge}</td>
       <td>${r.km.toFixed(1)} km</td>
       <td style="font-weight:500;">${paceStr(r.pace)}/km</td>
       <td>${r.hr || ''}</td>
+      <td style="color:#666;">${elev}</td>
       <td style="color:#888;">${r.notes || ''}</td>`;
     tbody.appendChild(tr);
   });
 }
 
 function renderRunsHeader() {
+  const setSub = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   if (!runs.length) {
     document.getElementById('run-total-cnt').textContent = 0;
     document.getElementById('run-total-km').textContent = '0.0';
+    setSub('run-total-cnt-sub', 'no runs');
+    setSub('run-total-km-sub', '');
     document.getElementById('running-subtitle').textContent = 'No runs in period';
     return;
   }
   const total = runs.length;
   const totalKm = runs.reduce((s, r) => s + r.km, 0);
+  const outdoor = runs.filter(r => !r.indoor);
+  const indoor = runs.filter(r => r.indoor);
+  const outKm = outdoor.reduce((s, r) => s + r.km, 0);
+  const inKm = indoor.reduce((s, r) => s + r.km, 0);
   const first = runs[0].rawDate;
   const last = runs[runs.length - 1].rawDate;
   const fmt = d => MONTHS[d.getMonth()] + ' ' + d.getDate();
   document.getElementById('run-total-cnt').textContent = total;
   document.getElementById('run-total-km').textContent = totalKm.toFixed(1);
+  setSub('run-total-cnt-sub', outdoor.length + ' outdoor · ' + indoor.length + ' indoor');
+  setSub('run-total-km-sub', outKm.toFixed(1) + ' out · ' + inKm.toFixed(1) + ' in');
   document.getElementById('running-subtitle').textContent = fmt(first) + ' to ' + fmt(last);
 }
 
@@ -613,6 +625,8 @@ async function loadRuns() {
     km: Number(r.Km) || 0,
     pace: Number(r.Pace) || 0,
     hr: Number(r.HR) || null,
+    indoor: r.Indoor === true || r.Indoor === 'TRUE' || r.Indoor === 'true',
+    elevation: Number(r.Elevation) || 0,
     notes: r.Notes || ''
   }));
   applyRunsPeriod();

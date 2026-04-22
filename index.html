@@ -205,7 +205,10 @@ body { overscroll-behavior-y: contain; }
       <label><span>FIR target (%)</span><input id="s-golfTargetFIR" type="text"></label>
       <label><span>GIR target (%)</span><input id="s-golfTargetGIR" type="text"></label>
     </div>
-    <label><span>Practice target (hrs/wk)</span><input id="s-practiceTargetHours" type="text"></label>
+    <div class="modal-row">
+      <label><span>Practice target (hrs/wk)</span><input id="s-practiceTargetHours" type="text"></label>
+      <label><span>Rounds target (year)</span><input id="s-golfRoundsTarget" type="text" placeholder="50"></label>
+    </div>
 
     <h3>Gym</h3>
     <label><span>Goal text</span><input id="s-gymGoal" type="text"></label>
@@ -230,7 +233,7 @@ body { overscroll-behavior-y: contain; }
 <p class="subtitle">Live summary across running, gym, golf</p>
 
 <div class="goals-box">
-  <h3>This week's goals</h3>
+  <h3>Progress</h3>
   <div id="home-goals">
     <div class="goal-row"><div class="goal-label"><span class="sk" style="width:70px;height:12px;"></span></div><div class="goal-value"><span class="sk" style="width:60px;height:11px;"></span></div><div class="goal-bar"><span class="sk sk-row" style="height:5px;"></span></div></div>
     <div class="goal-row"><div class="goal-label"><span class="sk" style="width:90px;height:12px;"></span></div><div class="goal-value"><span class="sk" style="width:60px;height:11px;"></span></div><div class="goal-bar"><span class="sk sk-row" style="height:5px;"></span></div></div>
@@ -331,17 +334,24 @@ body { overscroll-behavior-y: contain; }
 </div>
 
 <div class="metrics-row">
-  <div class="mc"><div class="mc-label">Rounds</div><div class="mc-val">5</div><div class="mc-sub">this season</div></div>
-  <div class="mc"><div class="mc-label">Scoring avg</div><div class="mc-val">89.0</div><div class="mc-sub">best: 86</div></div>
-  <div class="mc"><div class="mc-label">Last 5 avg</div><div class="mc-val">89.0</div><div class="mc-sub">trend flat</div></div>
-  <div class="mc"><div class="mc-label">Handicap</div><div class="mc-val">10.3</div><div class="mc-sub">Golf Canada</div></div>
+  <div class="mc"><div class="mc-label">Rounds</div><div class="mc-val" id="golf-rounds"><span class="sk sk-val"></span></div><div class="mc-sub" id="golf-rounds-sub"><span class="sk sk-sub"></span></div></div>
+  <div class="mc"><div class="mc-label">Scoring avg</div><div class="mc-val" id="golf-score-avg"><span class="sk sk-val"></span></div><div class="mc-sub" id="golf-score-sub"><span class="sk sk-sub"></span></div></div>
+  <div class="mc"><div class="mc-label">Last 5 avg</div><div class="mc-val" id="golf-last5"><span class="sk sk-val"></span></div><div class="mc-sub" id="golf-last5-sub"><span class="sk sk-sub"></span></div></div>
+  <div class="mc"><div class="mc-label">Handicap</div><div class="mc-val" id="golf-handicap">10.3</div><div class="mc-sub">Golf Canada</div></div>
 </div>
 
 <div class="metrics-row">
-  <div class="mc"><div class="mc-label">Avg FIR %</div><div class="mc-val">31%</div><div class="mc-sub">target 60%</div></div>
-  <div class="mc"><div class="mc-label">Avg GIR %</div><div class="mc-val">9%</div><div class="mc-sub">target 40%</div></div>
-  <div class="mc"><div class="mc-label">Avg putts</div><div class="mc-val">31</div><div class="mc-sub">target ≤ 30</div></div>
-  <div class="mc"><div class="mc-label">3-putts/rd</div><div class="mc-val">1.0</div><div class="mc-sub">target ≤ 1</div></div>
+  <div class="mc"><div class="mc-label">Avg FIR %</div><div class="mc-val" id="golf-fir"><span class="sk sk-val"></span></div><div class="mc-sub">target 60%</div></div>
+  <div class="mc"><div class="mc-label">Avg GIR %</div><div class="mc-val" id="golf-gir"><span class="sk sk-val"></span></div><div class="mc-sub">target 40%</div></div>
+  <div class="mc"><div class="mc-label">Avg putts</div><div class="mc-val" id="golf-putts"><span class="sk sk-val"></span></div><div class="mc-sub">target ≤ 30</div></div>
+  <div class="mc"><div class="mc-label">3-putts/rd</div><div class="mc-val" id="golf-3p"><span class="sk sk-val"></span></div><div class="mc-sub">target ≤ 1</div></div>
+</div>
+
+<div class="goals-box" style="margin-top:6px;">
+  <h3>Year goal</h3>
+  <div id="golf-ytd-goal">
+    <div class="goal-row"><div class="goal-label"><span class="sk" style="width:90px;height:12px;"></span></div><div class="goal-value"><span class="sk" style="width:60px;height:11px;"></span></div><div class="goal-bar"><span class="sk sk-row" style="height:5px;"></span></div></div>
+  </div>
 </div>
 
 <div class="workout-box">
@@ -502,10 +512,10 @@ body { overscroll-behavior-y: contain; }
 </div>
 
 <div class="metrics-row">
-  <div class="mc"><div class="mc-label">This week</div><div class="mc-val" id="gym-week"><span class="sk sk-val"></span></div><div class="mc-sub">of 3 target</div></div>
-  <div class="mc"><div class="mc-label">Last 4 wks</div><div class="mc-val" id="gym-4wk"><span class="sk sk-val"></span></div><div class="mc-sub">of 12 target</div></div>
+  <div class="mc"><div class="mc-label">Sessions</div><div class="mc-val" id="gym-sessions"><span class="sk sk-val"></span></div><div class="mc-sub" id="gym-sessions-sub"><span class="sk sk-sub"></span></div></div>
+  <div class="mc"><div class="mc-label">Per week</div><div class="mc-val" id="gym-per-week"><span class="sk sk-val"></span></div><div class="mc-sub">target 3/wk</div></div>
   <div class="mc"><div class="mc-label">Last session</div><div class="mc-val" id="gym-last"><span class="sk sk-val"></span></div><div class="mc-sub" id="gym-last-ago"><span class="sk sk-sub"></span></div></div>
-  <div class="mc"><div class="mc-label">Total logged</div><div class="mc-val" id="gym-total"><span class="sk sk-val"></span></div><div class="mc-sub">since Jul 2025</div></div>
+  <div class="mc"><div class="mc-label">Total sets</div><div class="mc-val" id="gym-total-sets"><span class="sk sk-val"></span></div><div class="mc-sub" id="gym-total-sets-sub"><span class="sk sk-sub"></span></div></div>
 </div>
 
 <div class="workout-box">
@@ -615,6 +625,7 @@ function setPeriod(tab, days, btn) {
   }
   if (tab === 'gym') {
     applyGymPeriod();
+    renderGymHeader();
     renderGymTable();
     showGymChart(activeGymChart || 'volume');
   }
@@ -818,6 +829,7 @@ function numOrNull(v) {
 function applyGolfPeriod() {
   const cutoff = periodCutoff('golf');
   rounds = cutoff ? allRounds.filter(r => r.rawDate >= cutoff) : allRounds.slice();
+  renderGolfHeader();
 }
 
 async function loadGolf(preFetched) {
@@ -831,14 +843,104 @@ async function loadGolf(preFetched) {
     fairway: numOrNull(r['FW Hit'] != null && r['FW Hit'] !== '' ? r['FW Hit'] : r.Fairway),
     gir:     numOrNull(r.GIR),
     putts:   numOrNull(r.Putts),
+    threePutts: numOrNull(r['3-Putts'] != null && r['3-Putts'] !== '' ? r['3-Putts'] : r.ThreePutts),
     notes:   r.Notes || ''
   }));
   applyGolfPeriod();
+  renderGolfHeader();
   renderGolfTable();
   if (document.getElementById('section-golf').classList.contains('active')) {
     showGolfChart('score', document.querySelector('#section-golf .tab'));
   }
   homeState.golf = true; tryRenderHome();
+}
+
+function renderGolfHeader() {
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  const subtext = periodLabel('golf');
+
+  // Card 1: Rounds in period
+  set('golf-rounds', rounds.length);
+  set('golf-rounds-sub', subtext);
+
+  // Card 2: Scoring avg (in period) + best
+  const scored = rounds.filter(r => r.score != null);
+  if (scored.length) {
+    const avg = scored.reduce((s,r) => s + r.score, 0) / scored.length;
+    set('golf-score-avg', avg.toFixed(1));
+    const best = Math.min(...scored.map(r => r.score));
+    set('golf-score-sub', 'best ' + best);
+  } else {
+    set('golf-score-avg', '-');
+    set('golf-score-sub', 'no scores');
+  }
+
+  // Card 3: Last 5 avg (ignores period, always last 5 rounds with a score)
+  const last5 = [...allRounds].filter(r => r.score != null).sort((a,b) => b.rawDate - a.rawDate).slice(0, 5);
+  if (last5.length) {
+    const avg5 = last5.reduce((s,r) => s + r.score, 0) / last5.length;
+    set('golf-last5', avg5.toFixed(1));
+    // Trend: compare last 5 avg to prior 5 avg
+    const prior5 = [...allRounds].filter(r => r.score != null).sort((a,b) => b.rawDate - a.rawDate).slice(5, 10);
+    if (prior5.length) {
+      const avgP = prior5.reduce((s,r) => s + r.score, 0) / prior5.length;
+      const diff = avg5 - avgP;
+      const trend = Math.abs(diff) < 0.5 ? 'trend flat' : (diff < 0 ? 'trend down ' + Math.abs(diff).toFixed(1) : 'trend up ' + diff.toFixed(1));
+      set('golf-last5-sub', trend);
+    } else {
+      set('golf-last5-sub', last5.length + ' rounds');
+    }
+  } else {
+    set('golf-last5', '-');
+    set('golf-last5-sub', '');
+  }
+
+  // Handicap from settings (fall back to 10.3)
+  if (SETTINGS && SETTINGS.golfHandicap) set('golf-handicap', SETTINGS.golfHandicap);
+
+  // Card 5-8: percentages in period
+  const withFw = rounds.filter(r => r.fairway != null);
+  if (withFw.length) {
+    const firPct = Math.round(withFw.reduce((s,r) => s + (r.fairway / 14 * 100), 0) / withFw.length);
+    set('golf-fir', firPct + '%');
+  } else set('golf-fir', '-');
+
+  const withGir = rounds.filter(r => r.gir != null);
+  if (withGir.length) {
+    const girPct = Math.round(withGir.reduce((s,r) => s + (r.gir / 18 * 100), 0) / withGir.length);
+    set('golf-gir', girPct + '%');
+  } else set('golf-gir', '-');
+
+  const withPutts = rounds.filter(r => r.putts != null);
+  if (withPutts.length) {
+    const avgP = withPutts.reduce((s,r) => s + r.putts, 0) / withPutts.length;
+    set('golf-putts', avgP.toFixed(1));
+  } else set('golf-putts', '-');
+
+  const with3P = rounds.filter(r => r.threePutts != null);
+  if (with3P.length) {
+    const avg3 = with3P.reduce((s,r) => s + r.threePutts, 0) / with3P.length;
+    set('golf-3p', avg3.toFixed(1));
+  } else set('golf-3p', '-');
+
+  // Year-to-date golf rounds goal (ignores period filter)
+  renderGolfYtdGoal();
+}
+
+function renderGolfYtdGoal() {
+  const el = document.getElementById('golf-ytd-goal');
+  if (!el) return;
+  const yearStart = new Date(new Date().getFullYear(), 0, 1);
+  const ytd = (allRounds || []).filter(r => r.rawDate >= yearStart).length;
+  const target = Number(SETTINGS && SETTINGS.golfRoundsTarget) || 50;
+  const rawPct = target > 0 ? (ytd / target) * 100 : 0;
+  const pct = Math.min(100, Math.round(rawPct));
+  const done = rawPct >= 100 ? ' done' : '';
+  el.innerHTML = `<div class="goal-row">
+    <div class="goal-label">Rounds this year</div>
+    <div class="goal-value">${ytd} / ${target}</div>
+    <div class="goal-bar"><div class="goal-fill golf${done}" style="width:${pct}%;"></div></div>
+  </div>`;
 }
 
 function renderGolfTable() {
@@ -1033,14 +1135,18 @@ async function loadGym(preFetched) {
 
   const unmapped = new Set();
   const fourWkAgoForUnmapped = fourWkAgo;
+  // Names matching these patterns don't need to map to a muscle group
+  const SKIP_UNMAPPED = /warm[\s-]*up|warmup|band|foam\s*roll|mobility|stretch|activation|cool[\s-]*down/i;
   sessions.forEach(r => {
     const date = new Date(r.Date);
     if (isNaN(date)) return;
     const dateStr = date.toISOString().split('T')[0];
     const m = muscleMap[r.Exercise];
     if (!m) {
-      // Only flag recent ones so stale legacy names don't spam the warning
-      if (r.Exercise && date >= fourWkAgoForUnmapped) unmapped.add(r.Exercise);
+      // Only flag recent ones that aren't warm-up/mobility style movements
+      if (r.Exercise && date >= fourWkAgoForUnmapped && !SKIP_UNMAPPED.test(r.Exercise)) {
+        unmapped.add(r.Exercise);
+      }
       return;
     }
     if (!byDate[dateStr]) {
@@ -1087,9 +1193,6 @@ async function loadGym(preFetched) {
   const sorted = dates.slice().sort((a,b) => b - a);
   const latest = sorted[0];
 
-  document.getElementById('gym-week').textContent = dates.filter(d => d >= weekStart).length;
-  document.getElementById('gym-4wk').textContent = dates.filter(d => d >= fourWkAgo).length;
-  document.getElementById('gym-total').textContent = Object.keys(byDate).length;
   if (latest) {
     document.getElementById('gym-last').textContent = MONTHS[latest.getMonth()] + ' ' + latest.getDate();
     document.getElementById('gym-last-ago').textContent = Math.floor((today - latest) / 86400000) + ' days ago';
@@ -1132,6 +1235,7 @@ async function loadGym(preFetched) {
   }
 
   applyGymPeriod();
+  renderGymHeader();
   renderGymWorkout('Day 1');
   renderGymPRs();
   renderGymTable();
@@ -1139,6 +1243,39 @@ async function loadGym(preFetched) {
     showGymChart('volume', document.querySelector('#section-gym .tab'));
   }
   homeState.gym = true; tryRenderHome();
+}
+
+function renderGymHeader() {
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  const days = PERIOD.gym;
+  const cutoff = periodCutoff('gym');
+  const filteredDates = cutoff ? (allGymSorted || []).filter(d => d >= cutoff) : (allGymSorted || []).slice();
+
+  set('gym-sessions', filteredDates.length);
+  set('gym-sessions-sub', 'in ' + periodLabel('gym'));
+
+  // weeks in period
+  let weeks;
+  if (days) {
+    weeks = Math.max(1, days / 7);
+  } else if (allGymSorted && allGymSorted.length) {
+    const earliest = allGymSorted[allGymSorted.length - 1];
+    weeks = Math.max(1, (Date.now() - earliest) / (7 * 86400000));
+  } else {
+    weeks = 1;
+  }
+  const perWk = filteredDates.length / weeks;
+  set('gym-per-week', perWk.toFixed(1));
+
+  // Total sets across filtered sessions
+  let totalSets = 0;
+  filteredDates.forEach(d => {
+    const k = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    const sess = (allGymByDate || {})[k];
+    if (sess) totalSets += sess.totalSets || 0;
+  });
+  set('gym-total-sets', totalSets);
+  set('gym-total-sets-sub', 'in ' + periodLabel('gym'));
 }
 
 function applyGymPeriod() {
@@ -1690,16 +1827,22 @@ function renderHomeGoals() {
   if (homeState.runs) {
     const wkKm = allRuns.filter(r => r.rawDate >= ws).reduce((s,r) => s + r.km, 0);
     const tgt = Number(SETTINGS.weeklyKmTarget) || 40;
-    rows.push({ label: 'Running', color: 'run', current: wkKm, target: tgt, display: wkKm.toFixed(1) + ' / ' + tgt + ' km' });
+    rows.push({ label: 'Running (week)', color: 'run', current: wkKm, target: tgt, display: wkKm.toFixed(1) + ' / ' + tgt + ' km' });
   }
   if (homeState.gym) {
     const wkG = gymDates.filter(d => d >= ws).length;
-    rows.push({ label: 'Gym sessions', color: 'gym', current: wkG, target: 3, display: wkG + ' / 3' });
+    rows.push({ label: 'Gym (week)', color: 'gym', current: wkG, target: 3, display: wkG + ' / 3' });
   }
   if (homeState.practice) {
     const wkHr = practice.filter(p => p.rawDate >= ws).reduce((s,p) => s + ((p.duration || 0) / 60), 0);
     const tgt = Number(SETTINGS.practiceTargetHours) || 5;
-    rows.push({ label: 'Golf practice', color: 'golf', current: wkHr, target: tgt, display: wkHr.toFixed(1) + ' / ' + tgt + ' hr' });
+    rows.push({ label: 'Golf practice (week)', color: 'golf', current: wkHr, target: tgt, display: wkHr.toFixed(1) + ' / ' + tgt + ' hr' });
+  }
+  if (homeState.golf) {
+    const yearStart = new Date(new Date().getFullYear(), 0, 1);
+    const ytd = allRounds.filter(r => r.rawDate >= yearStart).length;
+    const tgt = Number(SETTINGS.golfRoundsTarget) || 50;
+    rows.push({ label: 'Golf rounds (year)', color: 'golf', current: ytd, target: tgt, display: ytd + ' / ' + tgt });
   }
 
   if (!rows.length) return; // keep skeleton rows until at least one data source is ready
@@ -1961,6 +2104,7 @@ function openSettingsModal() {
   fill('s-golfTargetGIR', s.golfTargetGIR);
   fill('s-golfTarget3Putts', s.golfTarget3Putts);
   fill('s-practiceTargetHours', s.practiceTargetHours);
+  fill('s-golfRoundsTarget', s.golfRoundsTarget);
   fill('s-gymGoal', s.gymGoal);
   document.getElementById('settings-status').textContent = '';
   document.getElementById('settings-modal').classList.add('show');
@@ -1973,7 +2117,7 @@ function closeSettingsModal() {
 async function saveSettingsToSheet() {
   const status = document.getElementById('settings-status');
   status.textContent = 'Saving...';
-  const keys = ['runRace','runRaceDate','runGoalTime','vo2max','ltPace','weeklyKmTarget','golfGoal','golfTargetScore','golfTargetFIR','golfTargetGIR','golfTarget3Putts','practiceTargetHours','gymGoal'];
+  const keys = ['runRace','runRaceDate','runGoalTime','vo2max','ltPace','weeklyKmTarget','golfGoal','golfTargetScore','golfTargetFIR','golfTargetGIR','golfTarget3Putts','practiceTargetHours','golfRoundsTarget','gymGoal'];
   const updates = {};
   keys.forEach(k => {
     const el = document.getElementById('s-' + k);

@@ -119,6 +119,9 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
 .modal-actions button { flex: 1; padding: 9px; border-radius: 8px; border: 0.5px solid #ddd; background: #fff; font-size: 13px; font-weight: 500; cursor: pointer; }
 .modal-actions button.primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.gym-row:hover td { background: #fafaf8; }
+.gym-row td:first-child::before { content: '▸ '; color: var(--gym); font-size: 9px; }
+.gym-row.open td:first-child::before { content: '▾ '; }
 </style>
 </head>
 <body>
@@ -813,7 +816,14 @@ async function loadGym() {
     if (!byDate[dateStr]) {
       byDate[dateStr] = {date, dateStr, day: ((r.Rotation||'') + ' ' + (r.Day||'')).trim() || '-', exercises: [], totalSets: 0};
     }
-    byDate[dateStr].exercises.push({ex: r.Exercise, canonical: m.canonical, muscle: m.muscle});
+    const setsData = [];
+    for (let s = 1; s <= 4; s++) {
+      const repsRaw = r['Set ' + s + ' Reps'];
+      const weightRaw = r['Set ' + s + ' Weight'];
+      if (repsRaw === '' || repsRaw == null) continue;
+      setsData.push({reps: repsRaw, weight: weightRaw});
+    }
+    byDate[dateStr].exercises.push({ex: r.Exercise, canonical: m.canonical, muscle: m.muscle, sets: setsData, note: r.Note || ''});
     const inLast4 = date >= fourWkAgo;
     for (let s = 1; s <= 4; s++) {
       const reps = Number(r['Set ' + s + ' Reps']) || 0;
@@ -873,7 +883,7 @@ async function loadGym() {
       .slice(0, 3)
       .map(e => e.canonical.replace('Barbell ','').replace('DB ',''));
     const lifts = mains.length ? mains.join(', ') : sess.exercises.slice(0,3).map(e => e.ex).join(', ');
-    return {date: MONTHS[d.getMonth()] + ' ' + d.getDate(), day: sess.day, lifts, sets: sess.totalSets};
+    return {date: MONTHS[d.getMonth()] + ' ' + d.getDate(), day: sess.day, lifts, sets: sess.totalSets, exercises: sess.exercises};
   });
 
   gymDates = dates.slice();
@@ -908,9 +918,37 @@ function renderGymPRs() {
 }
 
 function renderGymTable() {
-  document.getElementById('gym-tbody').innerHTML = gymRecent.map(s =>
-    `<tr><td>${s.date}</td><td style="color:#888;">${s.day}</td><td>${s.lifts}</td><td>${s.sets}</td></tr>`
-  ).join('');
+  document.getElementById('gym-tbody').innerHTML = gymRecent.map((s, i) => {
+    const detail = (s.exercises || []).map(e => {
+      const setStr = (e.sets || []).map(st => {
+        const w = (st.weight === '' || st.weight == null) ? '' : st.weight;
+        const r = (st.reps === '' || st.reps == null) ? '' : st.reps;
+        if (w === '' && r === '') return '';
+        if (w === '') return r;
+        if (w === 'BW') return 'BW x ' + r;
+        return w + ' x ' + r;
+      }).filter(Boolean).join('  ·  ');
+      const noteHtml = e.note ? `<div style="font-size:10px;color:#aaa;margin-top:2px;">${e.note}</div>` : '';
+      return `<div style="padding:6px 0;border-top:0.5px solid #f0f0ee;">
+        <div style="font-size:12px;font-weight:500;">${e.ex}</div>
+        <div style="font-size:11px;color:#777;margin-top:2px;">${setStr || '-'}</div>
+        ${noteHtml}
+      </div>`;
+    }).join('');
+    return `<tr class="gym-row" onclick="toggleGymDetail(${i})" style="cursor:pointer;">
+        <td>${s.date}</td><td style="color:#888;">${s.day}</td><td>${s.lifts}</td><td>${s.sets}</td>
+      </tr>
+      <tr id="gym-detail-${i}" style="display:none;"><td colspan="4" style="background:var(--gym-wash);padding:8px 12px;">${detail}</td></tr>`;
+  }).join('');
+}
+
+function toggleGymDetail(i) {
+  const row = document.getElementById('gym-detail-' + i);
+  if (!row) return;
+  const open = row.style.display === 'none';
+  row.style.display = open ? 'table-row' : 'none';
+  const trigger = row.previousElementSibling;
+  if (trigger) trigger.classList.toggle('open', open);
 }
 
 let gymChart;

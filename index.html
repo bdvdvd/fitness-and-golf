@@ -974,16 +974,30 @@ let practice = [];
 async function loadPractice() {
   const res = await fetch(SHEETS_URL + '&sheet=Practice');
   const data = await res.json();
-  practice = data.map(r => ({
-    rawDate:  new Date(r.Date),
-    date:     fmtDate(r.Date),
-    location: r.Location || '',
-    duration: numOrNull(r.Duration),
-    focus:    r.Focus || '',
-    balls:    numOrNull(r['Balls Hit']),
-    drills:   r.Drills || '',
-    notes:    r.Notes || ''
-  })).sort((a,b) => a.rawDate - b.rawDate);
+  // Defensive: find keys by trimmed/lowercase match so header whitespace doesn't break things
+  const keyFor = (row, want) => {
+    const target = want.toLowerCase().trim();
+    return Object.keys(row).find(k => k.toLowerCase().trim() === target);
+  };
+  practice = data.map(r => {
+    const durKey = keyFor(r, 'Duration') || keyFor(r, 'Duration (min)');
+    const ballsKey = keyFor(r, 'Balls Hit');
+    const dateKey = keyFor(r, 'Date');
+    const locKey = keyFor(r, 'Location');
+    const focusKey = keyFor(r, 'Focus');
+    const drillsKey = keyFor(r, 'Drills');
+    const notesKey = keyFor(r, 'Notes');
+    return {
+      rawDate:  new Date(r[dateKey]),
+      date:     fmtDate(r[dateKey]),
+      location: r[locKey] || '',
+      duration: numOrNull(r[durKey]),
+      focus:    r[focusKey] || '',
+      balls:    numOrNull(r[ballsKey]),
+      drills:   r[drillsKey] || '',
+      notes:    r[notesKey] || ''
+    };
+  }).sort((a,b) => a.rawDate - b.rawDate);
   renderPracticeDashboard();
   homeState.practice = true; tryRenderHome();
 }

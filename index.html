@@ -665,8 +665,8 @@ function applyRunsPeriod() {
   runs = cutoff ? allRuns.filter(r => r.rawDate >= cutoff) : allRuns.slice();
 }
 
-async function loadRuns() {
-  const data = await fetch(SHEETS_URL + '&sheet=Runs').then(r => r.json());
+async function loadRuns(preFetched) {
+  const data = preFetched || await fetch(SHEETS_URL + '&sheet=Runs').then(r => r.json());
   allRuns = data.map(r => ({
     rawDate: new Date(r.Date),
     date: fmtDate(r.Date),
@@ -762,7 +762,7 @@ function showChart(type, btn) {
     },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
   }
 }
-loadRuns().catch(e => console.log('Runs load failed:', e));
+// Runs/Golf/Gym/Practice/Settings all load via loadAll() at bottom of script
 
 // --- Golf data & charts ---
 let rounds = [];
@@ -781,9 +781,8 @@ function applyGolfPeriod() {
   rounds = cutoff ? allRounds.filter(r => r.rawDate >= cutoff) : allRounds.slice();
 }
 
-async function loadGolf() {
-  const res = await fetch(SHEETS_URL);
-  const data = await res.json();
+async function loadGolf(preFetched) {
+  const data = preFetched || await fetch(SHEETS_URL).then(r => r.json());
   allRounds = data.map(r => ({
     rawDate: new Date(r.Date),
     date:    fmtDate(r.Date),
@@ -937,12 +936,14 @@ let gymLatest = null;  // {date, day, lifts}
 let allGymByDate = {}; // raw session map keyed by dateStr
 let allGymSorted = []; // all session objects newest first
 
-async function loadGym() {
-  const [sessions, exercises, workouts] = await Promise.all([
-    fetch(SHEETS_URL + '&sheet=Sessions').then(r => r.json()),
-    fetch(SHEETS_URL + '&sheet=Exercises').then(r => r.json()),
-    fetch(SHEETS_URL + '&sheet=Workouts').then(r => r.json()).catch(() => [])
-  ]);
+async function loadGym(preFetched) {
+  const [sessions, exercises, workouts] = preFetched
+    ? [preFetched.Sessions || [], preFetched.Exercises || [], preFetched.Workouts || []]
+    : await Promise.all([
+        fetch(SHEETS_URL + '&sheet=Sessions').then(r => r.json()),
+        fetch(SHEETS_URL + '&sheet=Exercises').then(r => r.json()),
+        fetch(SHEETS_URL + '&sheet=Workouts').then(r => r.json()).catch(() => [])
+      ]);
 
   // local YYYY-MM-DD helper so tz quirks don't split matching days
   const localKey = d => {
@@ -1389,9 +1390,8 @@ async function submitPracticeLogger() {
 
 // --- Practice data load ---
 let practice = [];
-async function loadPractice() {
-  const res = await fetch(SHEETS_URL + '&sheet=Practice');
-  const data = await res.json();
+async function loadPractice(preFetched) {
+  const data = preFetched || await fetch(SHEETS_URL + '&sheet=Practice').then(r => r.json());
   // Defensive: find keys by trimmed/lowercase match so header whitespace doesn't break things
   const keyFor = (row, want) => {
     const target = want.toLowerCase().trim();
@@ -1768,10 +1768,9 @@ function showSection(name, btn) {
 // ---- Settings (editable from gear icon) ----
 let SETTINGS = {};
 
-async function loadSettings() {
+async function loadSettings(preFetched) {
   try {
-    const res = await fetch(SHEETS_URL + '&sheet=Settings');
-    const rows = await res.json();
+    const rows = preFetched || await fetch(SHEETS_URL + '&sheet=Settings').then(r => r.json());
     const s = {};
     rows.forEach(r => { if (r.Key) s[r.Key] = r.Value; });
     SETTINGS = s;
@@ -1872,8 +1871,6 @@ async function saveSettingsToSheet() {
   }
 }
 
-loadSettings();
-
 // View-only mode: hide loggers and disable writes
 const VIEW_ONLY = new URLSearchParams(location.search).get('viewonly') === '1';
 if (VIEW_ONLY) {
@@ -1887,12 +1884,45 @@ if (VIEW_ONLY) {
   if (gear) gear.style.display = 'none';
 }
 
-// Eagerly load golf and gym so Home tab has all three data sources
-loadGolf().catch(e => console.log('Golf load failed:', e));
-golfInited = true;
-loadGym().catch(e => console.log('Gym load failed:', e));
-gymInited = true;
-loadPractice().catch(e => console.log('Practice load failed:', e));
+// Batch load: single fetch that returns all sheets. Falls back to individual loads
+// if the Apps Script hasn't been upgraded yet.
+async function loadAll() {
+  let batch = null;
+  try {
+    const res = await fetch(SHEETS_URL + '&sheet=all');
+    const data = await res.json();
+    // Batch response is an object keyed by sheet name. Old endpoint returned an array (default sheet).
+    if (data && !Array.isArray(data) && (data.Runs || data.Rounds || data.Sessions)) {
+      batch = data;
+    }
+  } catch (e) {
+    console.log('Batch fetch failed, falling back:', e);
+  }
+  if (batch) {
+    await Promise.all([
+      loadRuns(batch.Runs || []).catch(e => console.log('Runs:', e)),
+      loadGolf(batch.Rounds || []).catch(e => console.log('Golf:', e)),
+      loadGym({
+        Sessions: batch.Sessions || [],
+        Exercises: batch.Exercises || [],
+        Workouts: batch.Workouts || []
+      }).catch(e => console.log('Gym:', e)),
+      loadPractice(batch.Practice || []).catch(e => console.log('Practice:', e)),
+      loadSettings(batch.Settings || []).catch(e => console.log('Settings:', e))
+    ]);
+  } else {
+    await Promise.all([
+      loadRuns().catch(e => console.log('Runs:', e)),
+      loadGolf().catch(e => console.log('Golf:', e)),
+      loadGym().catch(e => console.log('Gym:', e)),
+      loadPractice().catch(e => console.log('Practice:', e)),
+      loadSettings().catch(e => console.log('Settings:', e))
+    ]);
+  }
+  golfInited = true;
+  gymInited = true;
+}
+loadAll();
 
 // --- Pull to refresh ---
 async function forceRefresh() {
@@ -1901,13 +1931,7 @@ async function forceRefresh() {
   }
   // Give the SW a tick to process the delete before re-fetching
   await new Promise(r => setTimeout(r, 50));
-  await Promise.all([
-    loadRuns().catch(() => {}),
-    loadGolf().catch(() => {}),
-    loadGym().catch(() => {}),
-    loadPractice().catch(() => {}),
-    loadSettings().catch(() => {})
-  ]);
+  await loadAll();
 }
 
 (function initPullToRefresh() {

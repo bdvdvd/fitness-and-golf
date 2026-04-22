@@ -72,6 +72,11 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
 .metrics-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px; }
 @media(min-width:460px){ .metrics-row { grid-template-columns: repeat(4, 1fr); } }
+.sk { display: inline-block; background: linear-gradient(90deg, #ececea 0%, #f4f4f2 50%, #ececea 100%); background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; border-radius: 4px; vertical-align: middle; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.sk-val { width: 56px; height: 20px; }
+.sk-sub { width: 80px; height: 9px; border-radius: 3px; }
+.sk-row { width: 100%; height: 14px; border-radius: 4px; }
 .goals-box { background: var(--card); border: 0.5px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
 .goals-box h3 { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 12px; }
 .goal-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 10px 0; border-top: 0.5px solid var(--border-soft); }
@@ -204,20 +209,24 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 
 <div class="goals-box">
   <h3>This week's goals</h3>
-  <div id="home-goals"></div>
+  <div id="home-goals">
+    <div class="goal-row"><div class="goal-label"><span class="sk" style="width:70px;height:12px;"></span></div><div class="goal-value"><span class="sk" style="width:60px;height:11px;"></span></div><div class="goal-bar"><span class="sk sk-row" style="height:5px;"></span></div></div>
+    <div class="goal-row"><div class="goal-label"><span class="sk" style="width:90px;height:12px;"></span></div><div class="goal-value"><span class="sk" style="width:60px;height:11px;"></span></div><div class="goal-bar"><span class="sk sk-row" style="height:5px;"></span></div></div>
+    <div class="goal-row"><div class="goal-label"><span class="sk" style="width:80px;height:12px;"></span></div><div class="goal-value"><span class="sk" style="width:60px;height:11px;"></span></div><div class="goal-bar"><span class="sk sk-row" style="height:5px;"></span></div></div>
+  </div>
 </div>
 
 <div class="metrics-row">
-  <div class="mc"><div class="mc-label">Latest run</div><div class="mc-val" id="home-run-val">-</div><div class="mc-sub" id="home-run-sub">-</div></div>
-  <div class="mc"><div class="mc-label">This week</div><div class="mc-val" id="home-wk-km">-</div><div class="mc-sub" id="home-wk-runs">-</div></div>
-  <div class="mc"><div class="mc-label">Latest gym</div><div class="mc-val" id="home-gym-val">-</div><div class="mc-sub" id="home-gym-sub">-</div></div>
-  <div class="mc"><div class="mc-label">Gym this week</div><div class="mc-val" id="home-wk-gym">-</div><div class="mc-sub">of 3 target</div></div>
+  <div class="mc"><div class="mc-label">Latest run</div><div class="mc-val" id="home-run-val"><span class="sk sk-val"></span></div><div class="mc-sub" id="home-run-sub"><span class="sk sk-sub"></span></div></div>
+  <div class="mc"><div class="mc-label">This week</div><div class="mc-val" id="home-wk-km"><span class="sk sk-val"></span></div><div class="mc-sub" id="home-wk-runs"><span class="sk sk-sub"></span></div></div>
+  <div class="mc"><div class="mc-label">Latest gym</div><div class="mc-val" id="home-gym-val"><span class="sk sk-val"></span></div><div class="mc-sub" id="home-gym-sub"><span class="sk sk-sub"></span></div></div>
+  <div class="mc"><div class="mc-label">Gym this week</div><div class="mc-val" id="home-wk-gym"><span class="sk sk-val"></span></div><div class="mc-sub">of 3 target</div></div>
 </div>
 
 <div class="metrics-row">
-  <div class="mc"><div class="mc-label">Latest round</div><div class="mc-val" id="home-golf-val">-</div><div class="mc-sub" id="home-golf-sub">-</div></div>
+  <div class="mc"><div class="mc-label">Latest round</div><div class="mc-val" id="home-golf-val"><span class="sk sk-val"></span></div><div class="mc-sub" id="home-golf-sub"><span class="sk sk-sub"></span></div></div>
   <div class="mc"><div class="mc-label">Handicap</div><div class="mc-val">10.3</div><div class="mc-sub">target 7.0</div></div>
-  <div class="mc"><div class="mc-label">Latest practice</div><div class="mc-val" id="home-practice-val">-</div><div class="mc-sub" id="home-practice-sub">-</div></div>
+  <div class="mc"><div class="mc-label">Latest practice</div><div class="mc-val" id="home-practice-val"><span class="sk sk-val"></span></div><div class="mc-sub" id="home-practice-sub"><span class="sk sk-sub"></span></div></div>
 </div>
 
 <div class="legend" id="home-legend"></div>
@@ -238,8 +247,8 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 </div>
 
 <div class="metrics">
-  <div class="mc"><div class="mc-label">Total runs</div><div class="mc-val" id="run-total-cnt">-</div><div class="mc-sub" id="run-total-cnt-sub">all time</div></div>
-  <div class="mc"><div class="mc-label">Total km</div><div class="mc-val" id="run-total-km">-</div><div class="mc-sub" id="run-total-km-sub">all time</div></div>
+  <div class="mc"><div class="mc-label">Total runs</div><div class="mc-val" id="run-total-cnt"><span class="sk sk-val"></span></div><div class="mc-sub" id="run-total-cnt-sub">all time</div></div>
+  <div class="mc"><div class="mc-label">Total km</div><div class="mc-val" id="run-total-km"><span class="sk sk-val"></span></div><div class="mc-sub" id="run-total-km-sub">all time</div></div>
   <div class="mc"><div class="mc-label">Sun Run</div><div class="mc-val">47:32</div><div class="mc-sub">missed PR by 25s</div></div>
   <div class="mc"><div class="mc-label">VO2 max</div><div class="mc-val" id="vo2max-val">52</div><div class="mc-sub" id="vo2max-sub">LT: 4:37/km</div></div>
 </div>
@@ -267,7 +276,12 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 <div class="table-wrap">
   <table>
     <thead><tr><th>Date</th><th>Type</th><th>Dist</th><th>Pace</th><th>HR</th><th>Elev</th><th>Notes</th></tr></thead>
-    <tbody id="tbody"></tbody>
+    <tbody id="tbody">
+      <tr><td colspan="7"><span class="sk sk-row"></span></td></tr>
+      <tr><td colspan="7"><span class="sk sk-row"></span></td></tr>
+      <tr><td colspan="7"><span class="sk sk-row"></span></td></tr>
+      <tr><td colspan="7"><span class="sk sk-row"></span></td></tr>
+    </tbody>
   </table>
 </div>
 
@@ -400,7 +414,11 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 <div class="table-wrap">
   <table>
     <thead><tr><th>Date</th><th>Course</th><th>Tees</th><th>Score</th><th>FIR</th><th>GIR</th><th>Putts</th><th>Notes</th></tr></thead>
-    <tbody id="golf-tbody"></tbody>
+    <tbody id="golf-tbody">
+      <tr><td colspan="8"><span class="sk sk-row"></span></td></tr>
+      <tr><td colspan="8"><span class="sk sk-row"></span></td></tr>
+      <tr><td colspan="8"><span class="sk sk-row"></span></td></tr>
+    </tbody>
   </table>
 </div>
 
@@ -453,10 +471,10 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 </div>
 
 <div class="metrics-row">
-  <div class="mc"><div class="mc-label">This week</div><div class="mc-val" id="gym-week">0</div><div class="mc-sub">of 3 target</div></div>
-  <div class="mc"><div class="mc-label">Last 4 wks</div><div class="mc-val" id="gym-4wk">1</div><div class="mc-sub">of 12 target</div></div>
-  <div class="mc"><div class="mc-label">Last session</div><div class="mc-val" id="gym-last">Mar 31</div><div class="mc-sub" id="gym-last-ago">20 days ago</div></div>
-  <div class="mc"><div class="mc-label">Total logged</div><div class="mc-val" id="gym-total">0</div><div class="mc-sub">since Jul 2025</div></div>
+  <div class="mc"><div class="mc-label">This week</div><div class="mc-val" id="gym-week"><span class="sk sk-val"></span></div><div class="mc-sub">of 3 target</div></div>
+  <div class="mc"><div class="mc-label">Last 4 wks</div><div class="mc-val" id="gym-4wk"><span class="sk sk-val"></span></div><div class="mc-sub">of 12 target</div></div>
+  <div class="mc"><div class="mc-label">Last session</div><div class="mc-val" id="gym-last"><span class="sk sk-val"></span></div><div class="mc-sub" id="gym-last-ago"><span class="sk sk-sub"></span></div></div>
+  <div class="mc"><div class="mc-label">Total logged</div><div class="mc-val" id="gym-total"><span class="sk sk-val"></span></div><div class="mc-sub">since Jul 2025</div></div>
 </div>
 
 <div class="workout-box">
@@ -509,7 +527,11 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 <div class="table-wrap">
   <table>
     <thead><tr><th>Date</th><th>Day</th><th>Main lifts</th><th>Sets</th></tr></thead>
-    <tbody id="gym-tbody"></tbody>
+    <tbody id="gym-tbody">
+      <tr><td colspan="4"><span class="sk sk-row"></span></td></tr>
+      <tr><td colspan="4"><span class="sk sk-row"></span></td></tr>
+      <tr><td colspan="4"><span class="sk sk-row"></span></td></tr>
+    </tbody>
   </table>
 </div>
 
@@ -1616,7 +1638,7 @@ function renderHomeGoals() {
     rows.push({ label: 'Golf practice', color: 'golf', current: wkHr, target: tgt, display: wkHr.toFixed(1) + ' / ' + tgt + ' hr' });
   }
 
-  if (!rows.length) { el.innerHTML = '<div style="font-size:12px;color:#888;">Loading...</div>'; return; }
+  if (!rows.length) return; // keep skeleton rows until at least one data source is ready
 
   el.innerHTML = rows.map(r => {
     const rawPct = r.target > 0 ? (r.current / r.target) * 100 : 0;

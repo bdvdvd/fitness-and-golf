@@ -72,6 +72,19 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
 .metrics-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px; }
 @media(min-width:460px){ .metrics-row { grid-template-columns: repeat(4, 1fr); } }
+.goals-box { background: var(--card); border: 0.5px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+.goals-box h3 { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 12px; }
+.goal-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 10px 0; border-top: 0.5px solid var(--border-soft); }
+.goal-row:first-of-type { border-top: none; padding-top: 0; }
+.goal-row:last-of-type { padding-bottom: 0; }
+.goal-label { font-size: 12px; color: var(--fg); font-weight: 500; }
+.goal-value { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.goal-bar { grid-column: 1 / -1; height: 5px; background: var(--border-soft); border-radius: 99px; overflow: hidden; margin-top: 6px; }
+.goal-fill { height: 100%; border-radius: 99px; transition: width 0.5s ease; }
+.goal-fill.run { background: var(--run); }
+.goal-fill.gym { background: var(--gym); }
+.goal-fill.golf { background: var(--golf); }
+.goal-fill.done { background: #1D9E75; }
 .goal-box { background: var(--golf-wash); border: 0.5px solid #c7e4cd; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; }
 .goal-box h3 { font-size: 12px; font-weight: 600; color: var(--golf-ink); margin-bottom: 10px; }
 .goal-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
@@ -153,6 +166,7 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
       <label><span>VO2 max</span><input id="s-vo2max" type="text"></label>
       <label><span>LT pace</span><input id="s-ltPace" type="text" placeholder="4:37/km"></label>
     </div>
+    <label><span>Weekly km target</span><input id="s-weeklyKmTarget" type="text" placeholder="40"></label>
 
     <h3>Golf</h3>
     <label><span>Goal text</span><input id="s-golfGoal" type="text"></label>
@@ -187,6 +201,11 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 
 <h1>Dashboard</h1>
 <p class="subtitle">Live summary across running, gym, golf</p>
+
+<div class="goals-box">
+  <h3>This week's goals</h3>
+  <div id="home-goals"></div>
+</div>
 
 <div class="metrics-row">
   <div class="mc"><div class="mc-label">Latest run</div><div class="mc-val" id="home-run-val">-</div><div class="mc-sub" id="home-run-sub">-</div></div>
@@ -1576,6 +1595,41 @@ function weekStartDate() {
   return ws;
 }
 
+function renderHomeGoals() {
+  const el = document.getElementById('home-goals');
+  if (!el) return;
+  const ws = weekStartDate();
+  const rows = [];
+
+  if (homeState.runs) {
+    const wkKm = allRuns.filter(r => r.rawDate >= ws).reduce((s,r) => s + r.km, 0);
+    const tgt = Number(SETTINGS.weeklyKmTarget) || 40;
+    rows.push({ label: 'Running', color: 'run', current: wkKm, target: tgt, display: wkKm.toFixed(1) + ' / ' + tgt + ' km' });
+  }
+  if (homeState.gym) {
+    const wkG = gymDates.filter(d => d >= ws).length;
+    rows.push({ label: 'Gym sessions', color: 'gym', current: wkG, target: 3, display: wkG + ' / 3' });
+  }
+  if (homeState.practice) {
+    const wkHr = practice.filter(p => p.rawDate >= ws).reduce((s,p) => s + ((p.duration || 0) / 60), 0);
+    const tgt = Number(SETTINGS.practiceTargetHours) || 5;
+    rows.push({ label: 'Golf practice', color: 'golf', current: wkHr, target: tgt, display: wkHr.toFixed(1) + ' / ' + tgt + ' hr' });
+  }
+
+  if (!rows.length) { el.innerHTML = '<div style="font-size:12px;color:#888;">Loading...</div>'; return; }
+
+  el.innerHTML = rows.map(r => {
+    const rawPct = r.target > 0 ? (r.current / r.target) * 100 : 0;
+    const pct = Math.min(100, Math.round(rawPct));
+    const done = rawPct >= 100 ? ' done' : '';
+    return `<div class="goal-row">
+      <div class="goal-label">${r.label}</div>
+      <div class="goal-value">${r.display} · ${pct}%</div>
+      <div class="goal-bar"><div class="goal-fill ${r.color}${done}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
 function tryRenderHome() {
   if (homeState.runs) {
     const last = allRuns[allRuns.length - 1];
@@ -1613,6 +1667,7 @@ function tryRenderHome() {
     }
   }
   if (homeState.runs && homeState.gym) renderHomeChart();
+  renderHomeGoals();
 }
 
 function renderHomeChart() {
@@ -1691,6 +1746,7 @@ async function loadSettings() {
     rows.forEach(r => { if (r.Key) s[r.Key] = r.Value; });
     SETTINGS = s;
     renderSettings();
+    renderHomeGoals();
   } catch (e) {
     console.log('Settings load failed:', e);
   }
@@ -1742,6 +1798,7 @@ function openSettingsModal() {
   fill('s-runGoalTime', s.runGoalTime);
   fill('s-vo2max', s.vo2max);
   fill('s-ltPace', s.ltPace);
+  fill('s-weeklyKmTarget', s.weeklyKmTarget);
   fill('s-golfGoal', s.golfGoal);
   fill('s-golfTargetScore', s.golfTargetScore);
   fill('s-golfTargetFIR', s.golfTargetFIR);
@@ -1760,7 +1817,7 @@ function closeSettingsModal() {
 async function saveSettingsToSheet() {
   const status = document.getElementById('settings-status');
   status.textContent = 'Saving...';
-  const keys = ['runRace','runRaceDate','runGoalTime','vo2max','ltPace','golfGoal','golfTargetScore','golfTargetFIR','golfTargetGIR','golfTarget3Putts','practiceTargetHours','gymGoal'];
+  const keys = ['runRace','runRaceDate','runGoalTime','vo2max','ltPace','weeklyKmTarget','golfGoal','golfTargetScore','golfTargetFIR','golfTargetGIR','golfTarget3Putts','practiceTargetHours','gymGoal'];
   const updates = {};
   keys.forEach(k => {
     const el = document.getElementById('s-' + k);

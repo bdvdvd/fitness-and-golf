@@ -72,6 +72,12 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
 .metrics-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px; }
 @media(min-width:460px){ .metrics-row { grid-template-columns: repeat(4, 1fr); } }
+body { overscroll-behavior-y: contain; }
+.ptr { position: fixed; top: 0; left: 50%; transform: translate(-50%, -60px); padding: 8px 16px; background: var(--card); border: 0.5px solid var(--border); border-radius: 999px; font-size: 11px; color: var(--muted); box-shadow: 0 2px 8px rgba(0,0,0,0.08); z-index: 9999; opacity: 0; transition: transform 0.2s ease, opacity 0.2s ease; pointer-events: none; display: flex; align-items: center; gap: 6px; font-weight: 500; }
+.ptr.visible { opacity: 1; }
+.ptr-spin { width: 10px; height: 10px; border: 1.5px solid #ccc; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; display: none; }
+.ptr.loading .ptr-spin { display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .sk { display: inline-block; background: linear-gradient(90deg, #ececea 0%, #f4f4f2 50%, #ececea 100%); background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; border-radius: 4px; vertical-align: middle; }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 .sk-val { width: 56px; height: 20px; }
@@ -150,6 +156,8 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 </style>
 </head>
 <body>
+
+<div id="ptr-indicator" class="ptr"><span class="ptr-spin"></span><span id="ptr-text">Pull to refresh</span></div>
 
 <div id="viewonly-banner" style="display:none;background:#f0f7ff;border:0.5px solid #b5d4f4;border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:#185fa5;">
   <strong>View only:</strong> This is a read-only showcase. Loggers are disabled.
@@ -1885,6 +1893,77 @@ golfInited = true;
 loadGym().catch(e => console.log('Gym load failed:', e));
 gymInited = true;
 loadPractice().catch(e => console.log('Practice load failed:', e));
+
+// --- Pull to refresh ---
+async function forceRefresh() {
+  if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({type: 'clear-api-cache'});
+  }
+  // Give the SW a tick to process the delete before re-fetching
+  await new Promise(r => setTimeout(r, 50));
+  await Promise.all([
+    loadRuns().catch(() => {}),
+    loadGolf().catch(() => {}),
+    loadGym().catch(() => {}),
+    loadPractice().catch(() => {}),
+    loadSettings().catch(() => {})
+  ]);
+}
+
+(function initPullToRefresh() {
+  const THRESHOLD = 70;
+  const MAX = 100;
+  let startY = 0;
+  let dist = 0;
+  let pulling = false;
+  let refreshing = false;
+  const indicator = document.getElementById('ptr-indicator');
+  const text = document.getElementById('ptr-text');
+
+  document.addEventListener('touchstart', e => {
+    if (refreshing) return;
+    if (window.scrollY > 0) { pulling = false; return; }
+    startY = e.touches[0].clientY;
+    pulling = true;
+    dist = 0;
+  }, {passive: true});
+
+  document.addEventListener('touchmove', e => {
+    if (!pulling || refreshing) return;
+    dist = e.touches[0].clientY - startY;
+    if (dist <= 0) { indicator.classList.remove('visible'); indicator.style.transform = 'translate(-50%, -60px)'; return; }
+    const shown = Math.min(dist * 0.5, MAX);
+    indicator.classList.add('visible');
+    indicator.style.transform = 'translate(-50%, ' + (shown - 20) + 'px)';
+    text.textContent = dist >= THRESHOLD ? 'Release to refresh' : 'Pull to refresh';
+  }, {passive: true});
+
+  document.addEventListener('touchend', async () => {
+    if (!pulling || refreshing) return;
+    pulling = false;
+    if (dist >= THRESHOLD) {
+      refreshing = true;
+      indicator.classList.add('loading', 'visible');
+      indicator.style.transform = 'translate(-50%, 20px)';
+      text.textContent = 'Refreshing';
+      try {
+        await forceRefresh();
+        text.textContent = 'Up to date';
+      } catch (e) {
+        text.textContent = 'Refresh failed';
+      }
+      setTimeout(() => {
+        indicator.classList.remove('visible', 'loading');
+        indicator.style.transform = 'translate(-50%, -60px)';
+        refreshing = false;
+      }, 700);
+    } else {
+      indicator.classList.remove('visible');
+      indicator.style.transform = 'translate(-50%, -60px)';
+    }
+    dist = 0;
+  }, {passive: true});
+})();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

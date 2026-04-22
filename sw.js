@@ -1,4 +1,4 @@
-const CACHE_NAME = 'training-dashboard-v33';
+const CACHE_NAME = 'training-dashboard-v34';
 const ASSETS = [
   './',
   './index.html',
@@ -22,6 +22,18 @@ self.addEventListener('activate', event => {
     )
   );
   self.clients.claim();
+});
+
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'clear-api-cache') {
+    caches.open(CACHE_NAME).then(cache =>
+      cache.keys().then(keys => {
+        keys.forEach(req => {
+          if (API_HOSTS.some(d => req.url.includes(d))) cache.delete(req);
+        });
+      })
+    );
+  }
 });
 
 async function handleApiRequest(request) {

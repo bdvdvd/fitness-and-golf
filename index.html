@@ -1811,6 +1811,22 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed:', err));
   });
+
+  // Stale-while-revalidate: when SW says fresh data arrived, reload the relevant section
+  const swrDebounce = {};
+  const swrReload = (key, fn) => {
+    clearTimeout(swrDebounce[key]);
+    swrDebounce[key] = setTimeout(() => fn().catch(() => {}), 150);
+  };
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (!e.data || e.data.type !== 'swr-update') return;
+    const u = e.data.url || '';
+    if (u.includes('sheet=Runs')) swrReload('runs', loadRuns);
+    else if (u.includes('sheet=Sessions') || u.includes('sheet=Exercises') || u.includes('sheet=Workouts')) swrReload('gym', loadGym);
+    else if (u.includes('sheet=Practice')) swrReload('practice', loadPractice);
+    else if (u.includes('sheet=Settings')) swrReload('settings', loadSettings);
+    else if (u.includes('/exec?') && !u.includes('sheet=')) swrReload('golf', loadGolf);
+  });
 }
 </script>
 </body>

@@ -1,12 +1,12 @@
-const CACHE_NAME = 'training-dashboard-v30';
+const CACHE_NAME = 'training-dashboard-v31';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'
 ];
-// Always bypass cache for these (live data)
-const BYPASS = ['script.google.com', 'script.googleusercontent.com'];
+// API endpoints that use stale-while-revalidate (instant response + background refresh)
+const API_HOSTS = ['script.google.com', 'script.googleusercontent.com'];
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -24,11 +24,37 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
+async function handleApiRequest(request) {
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(request);
+
+  const networkPromise = fetch(request).then(async response => {
+    if (!response || !response.ok) return response;
+    const forCache = response.clone();
+    const forCompare = response.clone();
+    await cache.put(request, forCache);
+    if (cached) {
+      const [newText, oldText] = await Promise.all([
+        forCompare.text(),
+        cached.clone().text()
+      ]);
+      if (newText !== oldText) {
+        const clients = await self.clients.matchAll();
+        clients.forEach(c => c.postMessage({type: 'swr-update', url: request.url}));
+      }
+    }
+    return response;
+  }).catch(() => cached || new Response('[]', {headers:{'Content-Type':'application/json'}}));
+
+  // Return cached instantly if we have it; otherwise wait for network.
+  return cached || networkPromise;
+}
+
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = event.request.url;
-  if (BYPASS.some(d => url.includes(d))) {
-    event.respondWith(fetch(event.request).catch(() => new Response('[]', {headers:{'Content-Type':'application/json'}})));
+  if (API_HOSTS.some(d => url.includes(d))) {
+    event.respondWith(handleApiRequest(event.request));
     return;
   }
   event.respondWith(

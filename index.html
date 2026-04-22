@@ -2080,6 +2080,59 @@ async function forceRefresh() {
   }, {passive: true});
 })();
 
+// --- Swipe between tabs ---
+(function initSwipeNav() {
+  const SECTIONS = ['home', 'running', 'golf', 'gym'];
+  const THRESHOLD = 60;      // minimum horizontal travel (px)
+  const VERT_TOLERANCE = 1.2; // |dx| must exceed |dy| * this
+  let startX = 0, startY = 0, tracking = false, startTime = 0;
+
+  const isHorizScrollable = el => {
+    try {
+      const cs = getComputedStyle(el);
+      const ox = cs.overflowX;
+      if ((ox === 'auto' || ox === 'scroll') && el.scrollWidth > el.clientWidth + 2) return true;
+    } catch (e) {}
+    return false;
+  };
+
+  document.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) { tracking = false; return; }
+    // Skip if modal open
+    if (document.querySelector('.modal-overlay.show')) { tracking = false; return; }
+    const t = e.target;
+    const tag = t.tagName;
+    if (tag === 'CANVAS' || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON') { tracking = false; return; }
+    // Walk up DOM to check for horizontal scrollers
+    for (let node = t; node && node !== document.body; node = node.parentElement) {
+      if (isHorizScrollable(node)) { tracking = false; return; }
+    }
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    startTime = Date.now();
+    tracking = true;
+  }, {passive: true});
+
+  document.addEventListener('touchend', e => {
+    if (!tracking) return;
+    tracking = false;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
+    const elapsed = Date.now() - startTime;
+    if (elapsed > 800) return; // too slow, treat as scroll
+    if (Math.abs(dx) < THRESHOLD) return;
+    if (Math.abs(dx) < Math.abs(dy) * VERT_TOLERANCE) return;
+    const tabs = [...document.querySelectorAll('.section-tab')];
+    const activeIdx = tabs.findIndex(b => b.classList.contains('active'));
+    if (activeIdx < 0) return;
+    const dir = dx < 0 ? 1 : -1;
+    const next = activeIdx + dir;
+    if (next < 0 || next >= SECTIONS.length) return;
+    showSection(SECTIONS[next], tabs[next]);
+  }, {passive: true});
+})();
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed:', err));
@@ -2094,7 +2147,8 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', e => {
     if (!e.data || e.data.type !== 'swr-update') return;
     const u = e.data.url || '';
-    if (u.includes('sheet=Runs')) swrReload('runs', loadRuns);
+    if (u.includes('sheet=all')) swrReload('all', loadAll);
+    else if (u.includes('sheet=Runs')) swrReload('runs', loadRuns);
     else if (u.includes('sheet=Sessions') || u.includes('sheet=Exercises') || u.includes('sheet=Workouts')) swrReload('gym', loadGym);
     else if (u.includes('sheet=Practice')) swrReload('practice', loadPractice);
     else if (u.includes('sheet=Settings')) swrReload('settings', loadSettings);

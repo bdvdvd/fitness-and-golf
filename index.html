@@ -96,6 +96,17 @@ body { overscroll-behavior-y: contain; }
 .goal-fill.gym { background: var(--gym); }
 .goal-fill.golf { background: var(--golf); }
 .goal-fill.done { background: #1D9E75; }
+.feed-item { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 9px 0; border-top: 0.5px solid var(--border-soft); }
+.feed-item:first-child { border-top: none; padding-top: 0; }
+.feed-item:last-child { padding-bottom: 0; }
+.feed-icon { width: 8px; height: 8px; border-radius: 99px; }
+.feed-icon.run { background: var(--run); }
+.feed-icon.gym { background: var(--gym); }
+.feed-icon.golf { background: var(--golf); }
+.feed-icon.practice { background: var(--golf); }
+.feed-title { font-size: 12px; color: var(--fg); font-weight: 500; }
+.feed-sub { font-size: 10px; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+.feed-meta { font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
 .goal-box { background: var(--golf-wash); border: 0.5px solid #c7e4cd; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; }
 .goal-box h3 { font-size: 12px; font-weight: 600; color: var(--golf-ink); margin-bottom: 10px; }
 .goal-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
@@ -239,6 +250,15 @@ body { overscroll-behavior-y: contain; }
 
 <div class="legend" id="home-legend"></div>
 <div class="chart-wrap"><canvas id="home-chart" role="img" aria-label="Weekly training load"></canvas></div>
+
+<div class="goals-box">
+  <h3>Recent activity</h3>
+  <div id="home-feed">
+    <div class="feed-item"><span class="sk" style="width:8px;height:8px;border-radius:99px;"></span><div><div class="sk" style="width:100px;height:12px;"></div><div class="sk" style="width:140px;height:10px;margin-top:4px;"></div></div><span class="sk" style="width:30px;height:10px;"></span></div>
+    <div class="feed-item"><span class="sk" style="width:8px;height:8px;border-radius:99px;"></span><div><div class="sk" style="width:120px;height:12px;"></div><div class="sk" style="width:110px;height:10px;margin-top:4px;"></div></div><span class="sk" style="width:30px;height:10px;"></span></div>
+    <div class="feed-item"><span class="sk" style="width:8px;height:8px;border-radius:99px;"></span><div><div class="sk" style="width:90px;height:12px;"></div><div class="sk" style="width:130px;height:10px;margin-top:4px;"></div></div><span class="sk" style="width:30px;height:10px;"></span></div>
+  </div>
+</div>
 
 </div><!-- /section-home -->
 
@@ -1698,6 +1718,77 @@ function tryRenderHome() {
   }
   if (homeState.runs && homeState.gym) renderHomeChart();
   renderHomeGoals();
+  renderHomeFeed();
+}
+
+function renderHomeFeed() {
+  const el = document.getElementById('home-feed');
+  if (!el) return;
+  // Wait until we have at least one data source
+  if (!homeState.runs && !homeState.golf && !homeState.gym && !homeState.practice) return;
+
+  const items = [];
+  const cleanName = s => (s || '').replace('Barbell ','').replace('DB ','').replace('Dumbbell ','');
+
+  (homeState.runs ? allRuns : []).forEach(r => {
+    if (!r.rawDate || isNaN(r.rawDate)) return;
+    const indoor = r.indoor ? ' (indoor)' : '';
+    items.push({
+      date: r.rawDate, type: 'run',
+      title: r.km.toFixed(1) + ' km' + indoor,
+      sub: (r.type || 'Run') + (r.pace ? ' · ' + paceStr(r.pace) + '/km' : '')
+    });
+  });
+
+  (homeState.golf ? allRounds : []).forEach(r => {
+    if (!r.rawDate || isNaN(r.rawDate)) return;
+    items.push({
+      date: r.rawDate, type: 'golf',
+      title: r.score != null ? ('Golf · ' + r.score) : 'Golf round',
+      sub: r.course + (r.tees ? ' · ' + r.tees : '')
+    });
+  });
+
+  (homeState.practice ? practice : []).forEach(p => {
+    if (!p.rawDate || isNaN(p.rawDate)) return;
+    items.push({
+      date: p.rawDate, type: 'practice',
+      title: p.duration ? (p.duration + ' min practice') : 'Practice',
+      sub: [p.location, p.focus].filter(Boolean).join(' · ') || '-'
+    });
+  });
+
+  if (homeState.gym) {
+    Object.values(allGymByDate || {}).forEach(s => {
+      if (!s.date || isNaN(s.date)) return;
+      const mains = (s.exercises || [])
+        .filter(e => e.muscle && e.muscle !== 'Warm-up' && e.muscle !== 'Review')
+        .slice(0, 3)
+        .map(e => cleanName(e.canonical));
+      items.push({
+        date: s.date, type: 'gym',
+        title: 'Gym · ' + (s.day || '-') + ' · ' + s.totalSets + ' sets',
+        sub: mains.join(', ') || (s.workout ? s.workout.name : '-')
+      });
+    });
+  }
+
+  items.sort((a, b) => b.date - a.date);
+  const top = items.slice(0, 10);
+
+  if (!top.length) { el.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:6px 0;">No recent activity yet.</div>'; return; }
+
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  el.innerHTML = top.map(it => {
+    const d = new Date(it.date); d.setHours(0, 0, 0, 0);
+    const daysAgo = Math.round((today - d) / 86400000);
+    const when = daysAgo <= 0 ? 'Today' : daysAgo === 1 ? 'Yesterday' : daysAgo + 'd ago';
+    return `<div class="feed-item">
+      <span class="feed-icon ${it.type}"></span>
+      <div><div class="feed-title">${it.title}</div><div class="feed-sub">${it.sub}</div></div>
+      <div class="feed-meta">${when}</div>
+    </div>`;
+  }).join('');
 }
 
 function renderHomeChart() {

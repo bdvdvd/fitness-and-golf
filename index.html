@@ -974,6 +974,12 @@ let practice = [];
 async function loadPractice() {
   const res = await fetch(SHEETS_URL + '&sheet=Practice');
   const data = await res.json();
+  if (data[0]) {
+    const keys = Object.keys(data[0]).map(k => '[' + k + ']').join(' ');
+    console.log('Practice keys:', keys);
+    const dbg = document.getElementById('prac-wk-label');
+    if (dbg) dbg.textContent = 'keys: ' + keys;
+  }
   // Defensive: find keys by trimmed/lowercase match so header whitespace doesn't break things
   const keyFor = (row, want) => {
     const target = want.toLowerCase().trim();

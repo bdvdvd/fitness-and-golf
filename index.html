@@ -63,6 +63,9 @@ th { padding: 9px 12px; text-align: left; font-weight: 600; color: var(--muted);
 td { padding: 8px 12px; border-top: 0.5px solid var(--border-soft); white-space: nowrap; }
 tr.race-row td { font-weight: 600; background: #fff5f5; }
 .badge { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 10px; font-weight: 600; }
+.empty-row td { padding: 24px 12px !important; text-align: center; color: var(--muted); font-size: 12px; font-weight: 400; }
+.empty-row .empty-title { display: block; color: var(--fg); font-weight: 500; font-size: 13px; margin-bottom: 4px; }
+.empty-row .empty-hint { display: block; font-size: 11px; color: #aaa; }
 .section-nav { display: flex; gap: 6px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 0.5px solid var(--border); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .section-nav::-webkit-scrollbar { display: none; }
 .section-tab { background: none; border: 0.5px solid transparent; border-radius: 999px; padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--muted); font-family: inherit; white-space: nowrap; transition: all 0.15s ease; letter-spacing: -0.005em; }
@@ -578,6 +581,16 @@ function periodCutoff(tab) {
   d.setDate(d.getDate() - days);
   return d;
 }
+function emptyRow(cols, title, hint) {
+  return `<tr class="empty-row"><td colspan="${cols}">
+    <span class="empty-title">${title}</span>
+    ${hint ? `<span class="empty-hint">${hint}</span>` : ''}
+  </td></tr>`;
+}
+function periodLabel(tab) {
+  const d = PERIOD[tab];
+  return d == null ? 'all time' : 'last ' + d + ' days';
+}
 function inPeriod(date, tab) {
   const cutoff = periodCutoff(tab);
   if (!cutoff) return true;
@@ -635,6 +648,12 @@ function paceStr(p) {
 function renderRunsTable() {
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
+  if (!runs.length) {
+    tbody.innerHTML = allRuns.length
+      ? emptyRow(7, 'No runs in ' + periodLabel('running'), 'Try a longer period or log a run')
+      : emptyRow(7, 'No runs logged yet', 'Sync Strava or add manually to get started');
+    return;
+  }
   // Show most recent first
   [...runs].reverse().forEach(r => {
     const tr = document.createElement('tr');
@@ -825,6 +844,12 @@ async function loadGolf(preFetched) {
 function renderGolfTable() {
   const golfTbody = document.getElementById('golf-tbody');
   golfTbody.innerHTML = '';
+  if (!rounds.length) {
+    golfTbody.innerHTML = allRounds.length
+      ? emptyRow(8, 'No rounds in ' + periodLabel('golf'), 'Try a longer period or log a round')
+      : emptyRow(8, 'No rounds logged yet', 'Log your first round above to get started');
+    return;
+  }
   [...rounds].reverse().forEach(r => {
     const tr = document.createElement('tr');
     const firPct = r.fairway !== null ? Math.round(r.fairway / 14 * 100) + '%' : '';
@@ -1199,7 +1224,14 @@ function renderGymPRs() {
 }
 
 function renderGymTable() {
-  document.getElementById('gym-tbody').innerHTML = gymRecent.map((s, i) => {
+  const tbody = document.getElementById('gym-tbody');
+  if (!gymRecent.length) {
+    tbody.innerHTML = (allGymSorted && allGymSorted.length)
+      ? emptyRow(4, 'No gym sessions in ' + periodLabel('gym'), 'Try a longer period or log a workout')
+      : emptyRow(4, 'No gym sessions yet', 'Open the logger above to record your first');
+    return;
+  }
+  tbody.innerHTML = gymRecent.map((s, i) => {
     const exerciseDetail = (s.exercises || []).map(e => {
       const setStr = (e.sets || []).map(st => {
         const w = (st.weight === '' || st.weight == null) ? '' : st.weight;
@@ -1493,6 +1525,10 @@ function renderPracticeDashboard() {
   // Recent table
   const tbody = document.getElementById('practice-tbody');
   const sorted = [...practice].sort((a,b) => b.rawDate - a.rawDate).slice(0, 20);
+  if (!sorted.length) {
+    tbody.innerHTML = emptyRow(5, 'No practice sessions yet', 'Log your first range or short-game session above');
+    return;
+  }
   tbody.innerHTML = sorted.map(p => `<tr>
     <td>${p.date}</td>
     <td>${p.location}</td>

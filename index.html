@@ -654,7 +654,7 @@ async function loadGolf() {
 function renderGolfTable() {
   const golfTbody = document.getElementById('golf-tbody');
   golfTbody.innerHTML = '';
-  rounds.forEach(r => {
+  [...rounds].reverse().forEach(r => {
     const tr = document.createElement('tr');
     const firPct = r.fairway !== null ? Math.round(r.fairway / 14 * 100) + '%' : '';
     const girPct = r.gir !== null ? Math.round(r.gir / 18 * 100) + '%' : '';

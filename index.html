@@ -107,6 +107,9 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 </head>
 <body>
 
+<div id="viewonly-banner" style="display:none;background:#f0f7ff;border:0.5px solid #b5d4f4;border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:#185fa5;">
+  <strong>View only:</strong> This is a read-only showcase. Loggers are disabled.
+</div>
 <div class="section-nav">
   <button class="section-tab active" onclick="showSection('home',this)">Home</button>
   <button class="section-tab" onclick="showSection('running',this)">Running</button>
@@ -1312,6 +1315,17 @@ function showSection(name, btn) {
     showGymChart('volume', document.querySelector('#section-gym .tab'));
     chartInited.gym = true;
   }
+}
+
+// View-only mode: hide loggers and disable writes
+const VIEW_ONLY = new URLSearchParams(location.search).get('viewonly') === '1';
+if (VIEW_ONLY) {
+  document.getElementById('viewonly-banner').style.display = 'block';
+  const ids = ['golf-logger-toggle-btn', 'practice-logger-toggle-btn', 'logger-toggle-btn'];
+  ids.forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.closest('.workout-box').style.display = 'none';
+  });
 }
 
 // Eagerly load golf and gym so Home tab has all three data sources

@@ -122,6 +122,8 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 .gym-row:hover td { background: #fafaf8; }
 .gym-row td:first-child::before { content: '▸ '; color: var(--gym); font-size: 9px; }
 .gym-row.open td:first-child::before { content: '▾ '; }
+.gym-badges { margin-top: 3px; display: flex; flex-wrap: wrap; gap: 4px; }
+.gym-badge { font-size: 9px; color: var(--gym-ink); background: var(--gym-wash); padding: 1px 6px; border-radius: 8px; font-weight: 500; border: 0.5px solid #f0e4d2; }
 </style>
 </head>
 <body>
@@ -780,10 +782,30 @@ let gymDates = [];     // all gym session Date objects
 let gymLatest = null;  // {date, day, lifts}
 
 async function loadGym() {
-  const [sessions, exercises] = await Promise.all([
+  const [sessions, exercises, workouts] = await Promise.all([
     fetch(SHEETS_URL + '&sheet=Sessions').then(r => r.json()),
-    fetch(SHEETS_URL + '&sheet=Exercises').then(r => r.json())
+    fetch(SHEETS_URL + '&sheet=Exercises').then(r => r.json()),
+    fetch(SHEETS_URL + '&sheet=Workouts').then(r => r.json()).catch(() => [])
   ]);
+
+  // local YYYY-MM-DD helper so tz quirks don't split matching days
+  const localKey = d => {
+    const dt = new Date(d);
+    return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+  };
+
+  const workoutsByDate = {};
+  (workouts || []).forEach(w => {
+    if (!w.Date) return;
+    const k = localKey(w.Date);
+    workoutsByDate[k] = {
+      name: w.Name || '',
+      duration: Number(w.Duration) || 0,
+      avgHr: Number(w['Avg HR']) || 0,
+      maxHr: Number(w['Max HR']) || 0,
+      calories: Number(w.Calories) || 0
+    };
+  });
   const muscleMap = {};
   exercises.forEach(e => {
     muscleMap[e['Raw name']] = {canonical: e.Canonical, muscle: e['Muscle group']};
@@ -841,6 +863,18 @@ async function loadGym() {
     }
   });
 
+  // Merge: include dates that exist in either manual sessions or Strava
+  Object.keys(workoutsByDate).forEach(k => {
+    if (!byDate[k]) {
+      const parts = k.split('-');
+      byDate[k] = {
+        date: new Date(Number(parts[0]), Number(parts[1])-1, Number(parts[2])),
+        dateStr: k, day: '-', exercises: [], totalSets: 0
+      };
+    }
+    byDate[k].workout = workoutsByDate[k];
+  });
+
   const dates = Object.values(byDate).map(d => d.date);
   const sorted = dates.slice().sort((a,b) => b - a);
   const latest = sorted[0];
@@ -876,14 +910,20 @@ async function loadGym() {
     });
   }
 
-  gymRecent = sorted.slice(0, 4).map(d => {
-    const sess = byDate[d.toISOString().split('T')[0]];
+  gymRecent = sorted.slice(0, 8).map(d => {
+    const sess = byDate[localKey(d)];
     const mains = sess.exercises
       .filter(e => e.muscle && e.muscle !== 'Warm-up' && e.muscle !== 'Review')
       .slice(0, 3)
       .map(e => e.canonical.replace('Barbell ','').replace('DB ',''));
-    const lifts = mains.length ? mains.join(', ') : sess.exercises.slice(0,3).map(e => e.ex).join(', ');
-    return {date: MONTHS[d.getMonth()] + ' ' + d.getDate(), day: sess.day, lifts, sets: sess.totalSets, exercises: sess.exercises};
+    const manualLifts = mains.length ? mains.join(', ') : sess.exercises.slice(0,3).map(e => e.ex).join(', ');
+    const lifts = manualLifts || (sess.workout ? sess.workout.name : '');
+    return {
+      date: MONTHS[d.getMonth()] + ' ' + d.getDate(),
+      day: sess.day, lifts, sets: sess.totalSets,
+      exercises: sess.exercises,
+      workout: sess.workout || null
+    };
   });
 
   gymDates = dates.slice();
@@ -919,7 +959,7 @@ function renderGymPRs() {
 
 function renderGymTable() {
   document.getElementById('gym-tbody').innerHTML = gymRecent.map((s, i) => {
-    const detail = (s.exercises || []).map(e => {
+    const exerciseDetail = (s.exercises || []).map(e => {
       const setStr = (e.sets || []).map(st => {
         const w = (st.weight === '' || st.weight == null) ? '' : st.weight;
         const r = (st.reps === '' || st.reps == null) ? '' : st.reps;
@@ -935,8 +975,22 @@ function renderGymTable() {
         ${noteHtml}
       </div>`;
     }).join('');
+    const detail = exerciseDetail || `<div style="padding:8px 0;font-size:11px;color:#888;">No sets logged for this session.</div>`;
+
+    // Strava badges (duration, avg HR, max HR, calories)
+    const w = s.workout;
+    let badges = '';
+    if (w) {
+      const parts = [];
+      if (w.duration) parts.push(w.duration + ' min');
+      if (w.avgHr) parts.push(w.avgHr + ' avg');
+      if (w.maxHr) parts.push(w.maxHr + ' max');
+      if (w.calories) parts.push(w.calories + ' cal');
+      badges = parts.map(p => `<span class="gym-badge">${p}</span>`).join('');
+    }
+    const setsCell = s.sets > 0 ? s.sets : (w ? '<span style="color:#bbb;">-</span>' : 0);
     return `<tr class="gym-row" onclick="toggleGymDetail(${i})" style="cursor:pointer;">
-        <td>${s.date}</td><td style="color:#888;">${s.day}</td><td>${s.lifts}</td><td>${s.sets}</td>
+        <td>${s.date}</td><td style="color:#888;">${s.day}</td><td>${s.lifts}<div class="gym-badges">${badges}</div></td><td>${setsCell}</td>
       </tr>
       <tr id="gym-detail-${i}" style="display:none;"><td colspan="4" style="background:var(--gym-wash);padding:8px 12px;">${detail}</td></tr>`;
   }).join('');

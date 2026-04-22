@@ -634,7 +634,7 @@ async function loadGolf() {
     course:  shortCourse(r.Course),
     tees:    r.Tees || '',
     score:   numOrNull(r.Score),
-    fairway: numOrNull(r.Fairway),
+    fairway: numOrNull(r['FW Hit'] != null && r['FW Hit'] !== '' ? r['FW Hit'] : r.Fairway),
     gir:     numOrNull(r.GIR),
     putts:   numOrNull(r.Putts),
     notes:   r.Notes || ''

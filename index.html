@@ -1151,12 +1151,16 @@ function addLoggerRow(name) {
   const wrap = document.getElementById('logger-exercises');
   const row = document.createElement('div');
   row.className = 'logger-row';
+  row.dataset.bw = '0';
+  row.dataset.perSide = '0';
   row.style.cssText = 'background:#f8f8f6;border-radius:8px;padding:8px;margin-bottom:6px;';
   const datalistId = 'ex-dl';
   const options = exerciseOptions.map(o => `<option value="${o}"></option>`).join('');
   row.innerHTML = `
     <div style="display:flex;gap:4px;align-items:center;margin-bottom:6px;">
       <input list="${datalistId}" class="lg-name" value="${name || ''}" placeholder="Exercise" style="flex:1;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;">
+      <button type="button" class="lg-bw-btn" onclick="toggleBW(this)" style="background:#fff;border:0.5px solid #ddd;border-radius:6px;font-size:10px;font-weight:600;color:#888;padding:4px 8px;cursor:pointer;">BW</button>
+      <button type="button" class="lg-ps-btn" onclick="togglePerSide(this)" style="background:#fff;border:0.5px solid #ddd;border-radius:6px;font-size:10px;font-weight:600;color:#888;padding:4px 8px;cursor:pointer;white-space:nowrap;">per side</button>
       <button onclick="this.closest('.logger-row').remove()" style="background:none;border:none;color:#888;font-size:18px;cursor:pointer;padding:0 6px;">×</button>
     </div>
     <div style="display:grid;grid-template-columns:30px repeat(4,1fr);gap:4px;align-items:center;margin-bottom:3px;">
@@ -1166,13 +1170,14 @@ function addLoggerRow(name) {
       <input type="number" class="lg-reps" data-set="3" inputmode="numeric" style="font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;min-width:0;">
       <input type="number" class="lg-reps" data-set="4" inputmode="numeric" style="font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;min-width:0;">
     </div>
-    <div style="display:grid;grid-template-columns:30px repeat(4,1fr);gap:4px;align-items:center;">
+    <div class="lg-wt-row" style="display:grid;grid-template-columns:30px repeat(4,1fr);gap:4px;align-items:center;">
       <span style="font-size:9px;color:#888;">Lbs</span>
       <input type="number" class="lg-wt" data-set="1" inputmode="decimal" style="font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;min-width:0;">
       <input type="number" class="lg-wt" data-set="2" inputmode="decimal" style="font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;min-width:0;">
       <input type="number" class="lg-wt" data-set="3" inputmode="decimal" style="font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;min-width:0;">
       <input type="number" class="lg-wt" data-set="4" inputmode="decimal" style="font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;min-width:0;">
     </div>
+    <input type="text" class="lg-note" placeholder="Note (optional)" style="width:100%;font-size:11px;padding:4px 6px;border:0.5px solid #ddd;border-radius:6px;margin-top:4px;">
   `;
   wrap.appendChild(row);
   if (!document.getElementById(datalistId)) {
@@ -1183,17 +1188,40 @@ function addLoggerRow(name) {
   }
 }
 
+function toggleBW(btn) {
+  const row = btn.closest('.logger-row');
+  const on = row.dataset.bw === '1';
+  row.dataset.bw = on ? '0' : '1';
+  btn.style.background = on ? '#fff' : '#1a1a1a';
+  btn.style.color = on ? '#888' : '#fff';
+  btn.style.borderColor = on ? '#ddd' : '#1a1a1a';
+  row.querySelector('.lg-wt-row').style.display = on ? 'grid' : 'none';
+}
+
+function togglePerSide(btn) {
+  const row = btn.closest('.logger-row');
+  const on = row.dataset.perSide === '1';
+  row.dataset.perSide = on ? '0' : '1';
+  btn.style.background = on ? '#fff' : '#1a1a1a';
+  btn.style.color = on ? '#888' : '#fff';
+  btn.style.borderColor = on ? '#ddd' : '#1a1a1a';
+}
+
 async function submitLogger() {
   const status = document.getElementById('logger-status');
   const date = document.getElementById('log-date').value;
   const rotation = document.getElementById('log-rotation').value.trim();
   const day = document.querySelector('#logger-day-picker .day-btn.active').textContent.trim();
   const rows = Array.from(document.querySelectorAll('.logger-row')).map(r => {
-    const name = r.querySelector('.lg-name').value.trim();
+    let name = r.querySelector('.lg-name').value.trim();
+    const perSide = r.dataset.perSide === '1';
+    const isBW = r.dataset.bw === '1';
+    if (perSide && name && !/per side/i.test(name)) name += ' (per side)';
+    const note = r.querySelector('.lg-note').value.trim();
     const reps = Array.from(r.querySelectorAll('.lg-reps')).map(i => i.value);
     const wts  = Array.from(r.querySelectorAll('.lg-wt')).map(i => i.value);
-    const sets = reps.map((rep, i) => ({reps: rep, weight: wts[i]}));
-    return {name, sets};
+    const sets = reps.map((rep, i) => ({reps: rep, weight: isBW ? 'BW' : wts[i]}));
+    return {name, sets, note};
   }).filter(ex => ex.name && ex.sets.some(s => s.reps));
   if (!rows.length) { status.textContent = 'Add at least one set'; status.style.color = '#E24B4A'; return; }
   if (!date) { status.textContent = 'Pick a date'; status.style.color = '#E24B4A'; return; }

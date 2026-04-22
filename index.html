@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brett's Training Dashboard</title>
+<title>Brett's Dashboard</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1a1a1a">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -142,12 +142,12 @@ tr.race-row td { font-weight: 600; background: #fff5f5; }
 
 <div class="section" id="section-running">
 
-<h1>Training Dashboard</h1>
-<p class="subtitle">Sun Run + Eugene Half prep · Mar 2 – Apr 26</p>
+<h1>Running</h1>
+<p class="subtitle" id="running-subtitle">Loading...</p>
 
 <div class="metrics">
-  <div class="mc"><div class="mc-label">Total runs</div><div class="mc-val">16</div><div class="mc-sub">inc. Sun Run</div></div>
-  <div class="mc"><div class="mc-label">Total km</div><div class="mc-val">106.6</div><div class="mc-sub">training + race</div></div>
+  <div class="mc"><div class="mc-label">Total runs</div><div class="mc-val" id="run-total-cnt">-</div><div class="mc-sub" id="run-total-cnt-sub">all time</div></div>
+  <div class="mc"><div class="mc-label">Total km</div><div class="mc-val" id="run-total-km">-</div><div class="mc-sub" id="run-total-km-sub">all time</div></div>
   <div class="mc"><div class="mc-label">Sun Run</div><div class="mc-val">47:32</div><div class="mc-sub">missed PR by 25s</div></div>
   <div class="mc"><div class="mc-label">VO2 max</div><div class="mc-val">52</div><div class="mc-sub">LT: 4:37/km</div></div>
 </div>
@@ -435,7 +435,8 @@ function paceStr(p) {
 function renderRunsTable() {
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
-  runs.forEach(r => {
+  // Show most recent first
+  [...runs].reverse().forEach(r => {
     const tr = document.createElement('tr');
     if(r.type==='RACE') tr.className='race-row';
     const color = colors[r.type] || '#888';
@@ -450,6 +451,18 @@ function renderRunsTable() {
   });
 }
 
+function renderRunsHeader() {
+  if (!allRuns.length) return;
+  const total = allRuns.length;
+  const totalKm = allRuns.reduce((s, r) => s + r.km, 0);
+  const first = allRuns[0].rawDate;
+  const last = allRuns[allRuns.length - 1].rawDate;
+  const fmt = d => MONTHS[d.getMonth()] + ' ' + d.getDate();
+  document.getElementById('run-total-cnt').textContent = total;
+  document.getElementById('run-total-km').textContent = totalKm.toFixed(1);
+  document.getElementById('running-subtitle').textContent = fmt(first) + ' to ' + fmt(last);
+}
+
 async function loadRuns() {
   const data = await fetch(SHEETS_URL + '&sheet=Runs').then(r => r.json());
   allRuns = data.map(r => ({
@@ -462,6 +475,7 @@ async function loadRuns() {
     notes: r.Notes || ''
   }));
   runs = allRuns.slice(-30);
+  renderRunsHeader();
   renderRunsTable();
   if (document.getElementById('section-running').classList.contains('active')) {
     showChart('pace', document.querySelector('#section-running .tab'));

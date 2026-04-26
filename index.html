@@ -47,12 +47,6 @@ h1::before { content: ''; display: inline-block; width: 6px; height: 18px; backg
 .mc-label { font-size: 10px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; }
 .mc-val { font-size: 22px; font-weight: 600; color: var(--fg); letter-spacing: -0.01em; line-height: 1.1; }
 .mc-sub { font-size: 10px; color: var(--soft); margin-top: 3px; }
-.eugene-box { background: var(--run-wash); border: 0.5px solid #b5d4f4; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; }
-.eugene-box h3 { font-size: 12px; font-weight: 600; color: #185fa5; margin-bottom: 10px; }
-.eugene-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-@media(min-width:380px){ .eugene-stats { grid-template-columns: repeat(4, 1fr); } }
-.eugene-stat { font-size: 10px; color: var(--run); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; }
-.eugene-stat span { display: block; font-size: 15px; font-weight: 600; color: var(--run-ink); text-transform: none; letter-spacing: 0; margin-top: 2px; }
 .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
 .tab { background: var(--card); border: 0.5px solid var(--border); border-radius: 999px; padding: 6px 14px; font-size: 12px; cursor: pointer; color: var(--muted); font-family: inherit; transition: all 0.15s ease; font-weight: 500; }
 .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
@@ -286,18 +280,7 @@ body { overscroll-behavior-y: contain; }
 <div class="metrics">
   <div class="mc"><div class="mc-label">Total runs</div><div class="mc-val" id="run-total-cnt"><span class="sk sk-val"></span></div><div class="mc-sub" id="run-total-cnt-sub">all time</div></div>
   <div class="mc"><div class="mc-label">Total km</div><div class="mc-val" id="run-total-km"><span class="sk sk-val"></span></div><div class="mc-sub" id="run-total-km-sub">all time</div></div>
-  <div class="mc"><div class="mc-label">Sun Run</div><div class="mc-val">47:32</div><div class="mc-sub">missed PR by 25s</div></div>
   <div class="mc"><div class="mc-label">VO2 max</div><div class="mc-val" id="vo2max-val">52</div><div class="mc-sub" id="vo2max-sub">LT: 4:37/km</div></div>
-</div>
-
-<div class="eugene-box">
-  <h3 id="race-box-title">Eugene Half Marathon - Apr 26 · Goal: Sub 1:45:00</h3>
-  <div class="eugene-stats">
-    <div class="eugene-stat">Target pace<span>4:59/km</span></div>
-    <div class="eugene-stat">LT pace<span>4:37/km</span></div>
-    <div class="eugene-stat">Prediction<span>1:43–1:46</span></div>
-    <div class="eugene-stat">Max safe HR<span>177 bpm</span></div>
-  </div>
 </div>
 
 <div class="tabs">
@@ -2059,14 +2042,6 @@ function renderSettings() {
   const set = (id, val) => { const el = document.getElementById(id); if (el && val != null && val !== '') el.textContent = val; };
 
   // Running
-  if (s.runRace || s.runRaceDate || s.runGoalTime) {
-    let dateStr = s.runRaceDate || '';
-    if (dateStr) {
-      const d = new Date(dateStr);
-      if (!isNaN(d)) dateStr = MONTHS[d.getMonth()] + ' ' + d.getDate();
-    }
-    set('race-box-title', `${s.runRace || ''} - ${dateStr} · Goal: ${s.runGoalTime || ''}`);
-  }
   set('vo2max-val', s.vo2max);
   if (s.ltPace) set('vo2max-sub', 'LT: ' + s.ltPace);
 

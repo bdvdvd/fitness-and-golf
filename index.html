@@ -281,6 +281,7 @@ body { overscroll-behavior-y: contain; }
   <div class="mc"><div class="mc-label">Total runs</div><div class="mc-val" id="run-total-cnt"><span class="sk sk-val"></span></div><div class="mc-sub" id="run-total-cnt-sub">all time</div></div>
   <div class="mc"><div class="mc-label">Total km</div><div class="mc-val" id="run-total-km"><span class="sk sk-val"></span></div><div class="mc-sub" id="run-total-km-sub">all time</div></div>
   <div class="mc"><div class="mc-label">VO2 max</div><div class="mc-val" id="vo2max-val">52</div><div class="mc-sub" id="vo2max-sub">LT: 4:37/km</div></div>
+  <div class="mc"><div class="mc-label">Avg pace</div><div class="mc-val" id="run-avg-pace"><span class="sk sk-val"></span></div><div class="mc-sub" id="run-avg-pace-sub"></div></div>
 </div>
 
 <div class="tabs">
@@ -675,8 +676,10 @@ function renderRunsHeader() {
   if (!runs.length) {
     document.getElementById('run-total-cnt').textContent = 0;
     document.getElementById('run-total-km').textContent = '0.0';
+    document.getElementById('run-avg-pace').textContent = '—';
     setSub('run-total-cnt-sub', 'no runs');
     setSub('run-total-km-sub', '');
+    setSub('run-avg-pace-sub', '');
     document.getElementById('running-subtitle').textContent = 'No runs in period';
     return;
   }
@@ -689,10 +692,16 @@ function renderRunsHeader() {
   const first = runs[0].rawDate;
   const last = runs[runs.length - 1].rawDate;
   const fmt = d => MONTHS[d.getMonth()] + ' ' + d.getDate();
+  const paced = runs.filter(r => r.pace > 0 && r.km > 0);
+  const pacedKm = paced.reduce((s, r) => s + r.km, 0);
+  const avgPace = pacedKm > 0 ? paced.reduce((s, r) => s + r.pace * r.km, 0) / pacedKm : 0;
+  const bestPace = paced.length ? Math.min(...paced.map(r => r.pace)) : 0;
   document.getElementById('run-total-cnt').textContent = total;
   document.getElementById('run-total-km').textContent = totalKm.toFixed(1);
+  document.getElementById('run-avg-pace').textContent = avgPace > 0 ? paceStr(avgPace) : '—';
   setSub('run-total-cnt-sub', outdoor.length + ' outdoor · ' + indoor.length + ' indoor');
   setSub('run-total-km-sub', outKm.toFixed(1) + ' out · ' + inKm.toFixed(1) + ' in');
+  setSub('run-avg-pace-sub', bestPace > 0 ? 'best ' + paceStr(bestPace) + '/km' : '');
   document.getElementById('running-subtitle').textContent = fmt(first) + ' to ' + fmt(last);
 }
 

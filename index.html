@@ -202,12 +202,16 @@ body { overscroll-behavior-y: contain; }
     <h3>Golf</h3>
     <label><span>Goal text</span><input id="s-golfGoal" type="text"></label>
     <div class="modal-row">
+      <label><span>Target handicap</span><input id="s-golfTargetHandicap" type="text" placeholder="7"></label>
       <label><span>Score target</span><input id="s-golfTargetScore" type="text"></label>
-      <label><span>3-putts target</span><input id="s-golfTarget3Putts" type="text"></label>
     </div>
     <div class="modal-row">
-      <label><span>FIR target (%)</span><input id="s-golfTargetFIR" type="text"></label>
-      <label><span>GIR target (%)</span><input id="s-golfTargetGIR" type="text"></label>
+      <label><span>FIR target (%)</span><input id="s-golfTargetFIR" type="text" placeholder="60"></label>
+      <label><span>GIR target (%)</span><input id="s-golfTargetGIR" type="text" placeholder="40"></label>
+    </div>
+    <div class="modal-row">
+      <label><span>Putts target</span><input id="s-golfTargetPutts" type="text" placeholder="30"></label>
+      <label><span>3-putts target</span><input id="s-golfTarget3Putts" type="text" placeholder="1"></label>
     </div>
     <div class="modal-row">
       <label><span>Practice target (hrs/wk)</span><input id="s-practiceTargetHours" type="text"></label>
@@ -434,13 +438,15 @@ body { overscroll-behavior-y: contain; }
 </div>
 
 <div class="goal-box">
-  <h3>Road to 7 handicap · from 10.3</h3>
+  <h3 id="golf-targets-heading">Road to 7 handicap · from 10.3</h3>
   <div class="goal-stats">
     <div class="goal-stat">Score target<span id="golf-target-score">≤ 82</span></div>
     <div class="goal-stat">FIR target<span id="golf-target-fir">60%</span></div>
     <div class="goal-stat">GIR target<span id="golf-target-gir">40%</span></div>
+    <div class="goal-stat">Putts target<span id="golf-target-putts">≤ 30</span></div>
     <div class="goal-stat">3-putts target<span id="golf-target-3putts">≤ 1/rd</span></div>
   </div>
+  <div style="font-size:10px;color:var(--soft);margin-top:6px;">Edit targets in Settings (top right gear)</div>
 </div>
 
 <div class="tabs">
@@ -908,8 +914,11 @@ function renderGolfHeader() {
   if (SETTINGS && SETTINGS.golfHandicap) set('golf-handicap', SETTINGS.golfHandicap);
 
   // Card 5-8: percentages in period
-  // Track values for focus-area calc. Higher-is-better stats use direction +1, lower-is-better use -1.
-  // strokesPerUnit ≈ rough strokes-saved per 1-unit improvement (industry shorthand).
+  // Targets come from Settings (editable). Defaults match a ~7 hcp baseline.
+  const tFir = Number(SETTINGS && SETTINGS.golfTargetFIR) || 60;
+  const tGir = Number(SETTINGS && SETTINGS.golfTargetGIR) || 40;
+  const tPutts = Number(SETTINGS && SETTINGS.golfTargetPutts) || 30;
+  const t3p = Number(SETTINGS && SETTINGS.golfTarget3Putts) || 1;
   const stats = [];
 
   const withFw = rounds.filter(r => r.fairway != null);
@@ -918,7 +927,7 @@ function renderGolfHeader() {
     firPct = Math.round(withFw.reduce((s,r) => s + (r.fairway / 14 * 100), 0) / withFw.length);
     set('golf-fir', firPct + '%');
   } else set('golf-fir', '-');
-  stats.push({ key: 'FIR', label: 'Fairways hit', current: firPct, target: 60, dir: +1, unit: '%', subId: 'golf-fir-sub', baseSub: 'target 60%', strokesPerUnit: 0.05 });
+  stats.push({ key: 'FIR', label: 'Fairways hit', current: firPct, target: tFir, dir: +1, unit: '%', subId: 'golf-fir-sub', baseSub: 'target ' + tFir + '%', strokesPerUnit: 0.05 });
 
   const withGir = rounds.filter(r => r.gir != null);
   let girPct = null;
@@ -926,7 +935,7 @@ function renderGolfHeader() {
     girPct = Math.round(withGir.reduce((s,r) => s + (r.gir / 18 * 100), 0) / withGir.length);
     set('golf-gir', girPct + '%');
   } else set('golf-gir', '-');
-  stats.push({ key: 'GIR', label: 'Greens in regulation', current: girPct, target: 40, dir: +1, unit: '%', subId: 'golf-gir-sub', baseSub: 'target 40%', strokesPerUnit: 0.10 });
+  stats.push({ key: 'GIR', label: 'Greens in regulation', current: girPct, target: tGir, dir: +1, unit: '%', subId: 'golf-gir-sub', baseSub: 'target ' + tGir + '%', strokesPerUnit: 0.10 });
 
   const withPutts = rounds.filter(r => r.putts != null);
   let avgPutts = null;
@@ -934,7 +943,7 @@ function renderGolfHeader() {
     avgPutts = withPutts.reduce((s,r) => s + r.putts, 0) / withPutts.length;
     set('golf-putts', avgPutts.toFixed(1));
   } else set('golf-putts', '-');
-  stats.push({ key: 'Putts', label: 'Putts per round', current: avgPutts, target: 30, dir: -1, unit: '', subId: 'golf-putts-sub', baseSub: 'target ≤ 30', strokesPerUnit: 1.0 });
+  stats.push({ key: 'Putts', label: 'Putts per round', current: avgPutts, target: tPutts, dir: -1, unit: '', subId: 'golf-putts-sub', baseSub: 'target ≤ ' + tPutts, strokesPerUnit: 1.0 });
 
   const with3P = rounds.filter(r => r.threePutts != null);
   let avg3 = null;
@@ -942,7 +951,7 @@ function renderGolfHeader() {
     avg3 = with3P.reduce((s,r) => s + r.threePutts, 0) / with3P.length;
     set('golf-3p', avg3.toFixed(1));
   } else set('golf-3p', '-');
-  stats.push({ key: '3-putts', label: '3-putts per round', current: avg3, target: 1, dir: -1, unit: '', subId: 'golf-3p-sub', baseSub: 'target ≤ 1', strokesPerUnit: 1.0 });
+  stats.push({ key: '3-putts', label: '3-putts per round', current: avg3, target: t3p, dir: -1, unit: '', subId: 'golf-3p-sub', baseSub: 'target ≤ ' + t3p, strokesPerUnit: 1.0 });
 
   // Update each card's sub-text with on/off target status and find weakest
   let worst = null;
@@ -2136,7 +2145,15 @@ function renderSettings() {
   if (s.golfTargetScore) set('golf-target-score', '≤ ' + s.golfTargetScore);
   if (s.golfTargetFIR) set('golf-target-fir', s.golfTargetFIR + '%');
   if (s.golfTargetGIR) set('golf-target-gir', s.golfTargetGIR + '%');
+  if (s.golfTargetPutts) set('golf-target-putts', '≤ ' + s.golfTargetPutts);
   if (s.golfTarget3Putts) set('golf-target-3putts', '≤ ' + s.golfTarget3Putts + '/rd');
+  // Dynamic targets heading: "Road to {targetHcp} handicap · from {currentHcp}"
+  const headEl = document.getElementById('golf-targets-heading');
+  if (headEl) {
+    const tgtHcp = s.golfTargetHandicap || 7;
+    const curHcp = s.golfHandicap || '10.3';
+    headEl.textContent = 'Road to ' + tgtHcp + ' handicap · from ' + curHcp;
+  }
   if (s.practiceTargetHours) {
     set('practice-subtitle', 'Target: ' + s.practiceTargetHours + ' hrs/week');
     const sub = document.getElementById('prac-wk-sub');
@@ -2164,8 +2181,10 @@ function openSettingsModal() {
   fill('s-weeklyKmTarget', s.weeklyKmTarget);
   fill('s-golfGoal', s.golfGoal);
   fill('s-golfTargetScore', s.golfTargetScore);
+  fill('s-golfTargetHandicap', s.golfTargetHandicap);
   fill('s-golfTargetFIR', s.golfTargetFIR);
   fill('s-golfTargetGIR', s.golfTargetGIR);
+  fill('s-golfTargetPutts', s.golfTargetPutts);
   fill('s-golfTarget3Putts', s.golfTarget3Putts);
   fill('s-practiceTargetHours', s.practiceTargetHours);
   fill('s-golfRoundsTarget', s.golfRoundsTarget);
@@ -2181,7 +2200,7 @@ function closeSettingsModal() {
 async function saveSettingsToSheet() {
   const status = document.getElementById('settings-status');
   status.textContent = 'Saving...';
-  const keys = ['runRace','runRaceDate','runGoalTime','vo2max','ltPace','weeklyKmTarget','golfGoal','golfTargetScore','golfTargetFIR','golfTargetGIR','golfTarget3Putts','practiceTargetHours','golfRoundsTarget','gymGoal'];
+  const keys = ['runRace','runRaceDate','runGoalTime','vo2max','ltPace','weeklyKmTarget','golfGoal','golfTargetScore','golfTargetHandicap','golfTargetFIR','golfTargetGIR','golfTargetPutts','golfTarget3Putts','practiceTargetHours','golfRoundsTarget','gymGoal'];
   const updates = {};
   keys.forEach(k => {
     const el = document.getElementById('s-' + k);

@@ -47,6 +47,13 @@ h1::before { content: ''; display: inline-block; width: 6px; height: 18px; backg
 .mc-label { font-size: 10px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; }
 .mc-val { font-size: 22px; font-weight: 600; color: var(--fg); letter-spacing: -0.01em; line-height: 1.1; }
 .mc-sub { font-size: 10px; color: var(--soft); margin-top: 3px; }
+.mc-sub.on-target { color: #2e7d32; font-weight: 500; }
+.mc-sub.off-target { color: #c62828; font-weight: 500; }
+.focus-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
+.focus-stat { font-size: 13px; font-weight: 600; color: var(--fg); }
+.focus-detail { font-size: 11px; color: var(--soft); margin-top: 2px; }
+.focus-pill { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: #fef3e0; color: #b46a16; font-weight: 500; }
+.focus-pill.good { background: #e8f5e9; color: #2e7d32; }
 .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
 .tab { background: var(--card); border: 0.5px solid var(--border); border-radius: 999px; padding: 6px 14px; font-size: 12px; cursor: pointer; color: var(--muted); font-family: inherit; transition: all 0.15s ease; font-weight: 500; }
 .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
@@ -328,16 +335,23 @@ body { overscroll-behavior-y: contain; }
 </div>
 
 <div class="metrics-row">
-  <div class="mc"><div class="mc-label">Avg FIR %</div><div class="mc-val" id="golf-fir"><span class="sk sk-val"></span></div><div class="mc-sub">target 60%</div></div>
-  <div class="mc"><div class="mc-label">Avg GIR %</div><div class="mc-val" id="golf-gir"><span class="sk sk-val"></span></div><div class="mc-sub">target 40%</div></div>
-  <div class="mc"><div class="mc-label">Avg putts</div><div class="mc-val" id="golf-putts"><span class="sk sk-val"></span></div><div class="mc-sub">target ≤ 30</div></div>
-  <div class="mc"><div class="mc-label">3-putts/rd</div><div class="mc-val" id="golf-3p"><span class="sk sk-val"></span></div><div class="mc-sub">target ≤ 1</div></div>
+  <div class="mc"><div class="mc-label">Avg FIR %</div><div class="mc-val" id="golf-fir"><span class="sk sk-val"></span></div><div class="mc-sub" id="golf-fir-sub">target 60%</div></div>
+  <div class="mc"><div class="mc-label">Avg GIR %</div><div class="mc-val" id="golf-gir"><span class="sk sk-val"></span></div><div class="mc-sub" id="golf-gir-sub">target 40%</div></div>
+  <div class="mc"><div class="mc-label">Avg putts</div><div class="mc-val" id="golf-putts"><span class="sk sk-val"></span></div><div class="mc-sub" id="golf-putts-sub">target ≤ 30</div></div>
+  <div class="mc"><div class="mc-label">3-putts/rd</div><div class="mc-val" id="golf-3p"><span class="sk sk-val"></span></div><div class="mc-sub" id="golf-3p-sub">target ≤ 1</div></div>
 </div>
 
 <div class="goals-box" style="margin-top:6px;">
   <h3>Year goal</h3>
   <div id="golf-ytd-goal">
     <div class="goal-row"><div class="goal-label"><span class="sk" style="width:90px;height:12px;"></span></div><div class="goal-value"><span class="sk" style="width:60px;height:11px;"></span></div><div class="goal-bar"><span class="sk sk-row" style="height:5px;"></span></div></div>
+  </div>
+</div>
+
+<div class="goals-box" style="margin-top:6px;">
+  <h3>Focus area</h3>
+  <div id="golf-focus">
+    <div style="font-size:11px;color:var(--soft);">Loading...</div>
   </div>
 </div>
 
@@ -894,29 +908,92 @@ function renderGolfHeader() {
   if (SETTINGS && SETTINGS.golfHandicap) set('golf-handicap', SETTINGS.golfHandicap);
 
   // Card 5-8: percentages in period
+  // Track values for focus-area calc. Higher-is-better stats use direction +1, lower-is-better use -1.
+  // strokesPerUnit ≈ rough strokes-saved per 1-unit improvement (industry shorthand).
+  const stats = [];
+
   const withFw = rounds.filter(r => r.fairway != null);
+  let firPct = null;
   if (withFw.length) {
-    const firPct = Math.round(withFw.reduce((s,r) => s + (r.fairway / 14 * 100), 0) / withFw.length);
+    firPct = Math.round(withFw.reduce((s,r) => s + (r.fairway / 14 * 100), 0) / withFw.length);
     set('golf-fir', firPct + '%');
   } else set('golf-fir', '-');
+  stats.push({ key: 'FIR', label: 'Fairways hit', current: firPct, target: 60, dir: +1, unit: '%', subId: 'golf-fir-sub', baseSub: 'target 60%', strokesPerUnit: 0.05 });
 
   const withGir = rounds.filter(r => r.gir != null);
+  let girPct = null;
   if (withGir.length) {
-    const girPct = Math.round(withGir.reduce((s,r) => s + (r.gir / 18 * 100), 0) / withGir.length);
+    girPct = Math.round(withGir.reduce((s,r) => s + (r.gir / 18 * 100), 0) / withGir.length);
     set('golf-gir', girPct + '%');
   } else set('golf-gir', '-');
+  stats.push({ key: 'GIR', label: 'Greens in regulation', current: girPct, target: 40, dir: +1, unit: '%', subId: 'golf-gir-sub', baseSub: 'target 40%', strokesPerUnit: 0.10 });
 
   const withPutts = rounds.filter(r => r.putts != null);
+  let avgPutts = null;
   if (withPutts.length) {
-    const avgP = withPutts.reduce((s,r) => s + r.putts, 0) / withPutts.length;
-    set('golf-putts', avgP.toFixed(1));
+    avgPutts = withPutts.reduce((s,r) => s + r.putts, 0) / withPutts.length;
+    set('golf-putts', avgPutts.toFixed(1));
   } else set('golf-putts', '-');
+  stats.push({ key: 'Putts', label: 'Putts per round', current: avgPutts, target: 30, dir: -1, unit: '', subId: 'golf-putts-sub', baseSub: 'target ≤ 30', strokesPerUnit: 1.0 });
 
   const with3P = rounds.filter(r => r.threePutts != null);
+  let avg3 = null;
   if (with3P.length) {
-    const avg3 = with3P.reduce((s,r) => s + r.threePutts, 0) / with3P.length;
+    avg3 = with3P.reduce((s,r) => s + r.threePutts, 0) / with3P.length;
     set('golf-3p', avg3.toFixed(1));
   } else set('golf-3p', '-');
+  stats.push({ key: '3-putts', label: '3-putts per round', current: avg3, target: 1, dir: -1, unit: '', subId: 'golf-3p-sub', baseSub: 'target ≤ 1', strokesPerUnit: 1.0 });
+
+  // Update each card's sub-text with on/off target status and find weakest
+  let worst = null;
+  stats.forEach(s => {
+    const subEl = document.getElementById(s.subId);
+    if (!subEl) return;
+    if (s.current == null) {
+      subEl.textContent = s.baseSub;
+      subEl.classList.remove('on-target', 'off-target');
+      return;
+    }
+    // Gap: positive means we're behind target. dir +1 means higher is better.
+    const gap = s.dir > 0 ? (s.target - s.current) : (s.current - s.target);
+    if (gap <= 0) {
+      subEl.textContent = '✓ on target';
+      subEl.classList.add('on-target');
+      subEl.classList.remove('off-target');
+    } else {
+      const gapStr = s.unit === '%' ? Math.round(gap) + '% off' : gap.toFixed(1) + ' off';
+      subEl.textContent = gapStr + ' target';
+      subEl.classList.add('off-target');
+      subEl.classList.remove('on-target');
+      // Score weakness: estimated strokes lost vs target
+      const strokesLost = gap * s.strokesPerUnit;
+      if (!worst || strokesLost > worst.strokesLost) {
+        worst = Object.assign({}, s, { gap, strokesLost });
+      }
+    }
+  });
+
+  // Render focus area
+  const focusEl = document.getElementById('golf-focus');
+  if (focusEl) {
+    const haveAny = stats.some(s => s.current != null);
+    if (!haveAny) {
+      focusEl.innerHTML = '<div class="focus-detail">Log a few rounds with stats to see your focus area.</div>';
+    } else if (!worst) {
+      focusEl.innerHTML = '<div class="focus-row"><div><div class="focus-stat">Everything on target</div><div class="focus-detail">Nice work. Keep stacking rounds.</div></div><div class="focus-pill good">on track</div></div>';
+    } else {
+      const currStr = worst.unit === '%' ? Math.round(worst.current) + '%' : worst.current.toFixed(1);
+      const tgtStr = worst.unit === '%' ? worst.target + '%' : (worst.dir < 0 ? '≤ ' : '') + worst.target;
+      const savedStr = worst.strokesLost >= 1 ? '~' + worst.strokesLost.toFixed(1) + ' strokes/round' : '~' + worst.strokesLost.toFixed(2) + ' strokes/round';
+      focusEl.innerHTML = `<div class="focus-row">
+        <div>
+          <div class="focus-stat">${worst.label}</div>
+          <div class="focus-detail">Now ${currStr} vs ${tgtStr}. Closing this gap ≈ ${savedStr}.</div>
+        </div>
+        <div class="focus-pill">biggest gap</div>
+      </div>`;
+    }
+  }
 
   // Year-to-date golf rounds goal (ignores period filter)
   renderGolfYtdGoal();

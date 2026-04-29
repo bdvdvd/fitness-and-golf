@@ -1240,7 +1240,9 @@ async function loadGym(preFetched) {
     const date = new Date(r.Date);
     if (isNaN(date)) return;
     const dateStr = date.toISOString().split('T')[0];
-    const m = muscleMap[r.Exercise];
+    // Strip trailing "(per side)" so historical logs still map to the canonical exercise.
+    const cleanName = (r.Exercise || '').toString().replace(/\s*\(per side\)\s*$/i, '').trim();
+    const m = muscleMap[r.Exercise] || muscleMap[cleanName];
     if (!m) {
       // Only flag recent ones that aren't warm-up/mobility style movements
       if (r.Exercise && date >= fourWkAgoForUnmapped && !SKIP_UNMAPPED.test(r.Exercise)) {
@@ -1888,12 +1890,17 @@ async function submitLogger() {
   const rotation = document.getElementById('log-rotation').value.trim();
   const day = document.querySelector('#logger-day-picker .day-btn.active').textContent.trim();
   const rows = Array.from(document.querySelectorAll('.logger-row')).map(r => {
-    let name = r.querySelector('.lg-name').value.trim();
+    const name = r.querySelector('.lg-name').value.trim();
     const perSide = r.dataset.perSide === '1';
     const isBW = r.dataset.bw === '1';
-    if (perSide && name && !/per side/i.test(name)) name += ' (per side)';
     const note = r.querySelector('.lg-note').value.trim();
-    const reps = Array.from(r.querySelectorAll('.lg-reps')).map(i => i.value);
+    // Per-side now annotates reps (e.g. "8/side") instead of mangling the exercise name,
+    // so the name still matches the Exercises mapping sheet.
+    const reps = Array.from(r.querySelectorAll('.lg-reps')).map(i => {
+      let v = (i.value || '').toString().trim();
+      if (perSide && v && !/\/side|per\s*side/i.test(v)) v = v + '/side';
+      return v;
+    });
     const wts  = Array.from(r.querySelectorAll('.lg-wt')).map(i => i.value);
     const sets = reps.map((rep, i) => ({reps: rep, weight: isBW ? 'BW' : wts[i]}));
     return {name, sets, note};

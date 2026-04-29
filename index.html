@@ -128,10 +128,12 @@ body { overscroll-behavior-y: contain; }
 .workout-box { background: var(--card); border: 0.5px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; }
 .workout-box h3 { font-size: 13px; font-weight: 600; color: var(--fg); margin-bottom: 10px; }
 .workout-list { display: flex; flex-direction: column; gap: 6px; }
-.workout-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; font-size: 12px; padding: 6px 0; border-top: 0.5px solid var(--border-soft); }
+.workout-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; font-size: 12px; padding: 6px 0; border-top: 0.5px solid var(--border-soft); align-items: start; }
 .workout-row:first-child { border-top: none; }
-.workout-row .ex { color: var(--fg); font-weight: 500; }
-.workout-row .sr { color: var(--muted); font-size: 11px; }
+.workout-row .ex { color: var(--fg); font-weight: 500; display: block; }
+.workout-row .sr { color: var(--muted); font-size: 11px; text-align: right; padding-top: 1px; }
+.workout-row .ex-block { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.workout-row .workout-note { color: var(--soft); font-size: 10px; font-style: italic; }
 .pr-box { background: var(--gym-wash); border: 0.5px solid #f0dfc7; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; }
 .pr-box h3 { font-size: 12px; font-weight: 600; color: var(--gym-ink); margin-bottom: 10px; }
 .pr-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
@@ -1122,38 +1124,54 @@ function showGolfChart(type, btn) {
 }
 
 // --- Gym data ---
-const gymProgram = {
-  'Day 1': [
-    {ex:'Band Warm-up', sets:1, reps:'2-3 min'},
-    {ex:'Barbell Bench Press', sets:4, reps:'5-8'},
-    {ex:'DB Goblet Squat', sets:3, reps:10},
-    {ex:'One-Arm Cable Row', sets:3, reps:10},
-    {ex:'DB Romanian Deadlift', sets:3, reps:8},
-    {ex:'Hanging Leg Raises', sets:3, reps:10},
-    {ex:'Triceps Rope Pushdown', sets:3, reps:'12-15'},
-    {ex:'Machine Lateral Raise', sets:3, reps:12}
-  ],
-  'Day 2': [
-    {ex:'Band Warm-up', sets:1, reps:'2-3 min'},
-    {ex:'Hex Bar Deadlift', sets:4, reps:'3-5'},
-    {ex:'DB Overhead Press', sets:3, reps:8},
-    {ex:'Neutral-Grip Pull-Up', sets:3, reps:'AMRAP'},
-    {ex:'Reverse Lunge', sets:3, reps:'8/side'},
-    {ex:'Cable Face Pull', sets:3, reps:15},
-    {ex:'Bicep Curl', sets:3, reps:12},
-    {ex:'Side Plank', sets:3, reps:'30s/side'}
-  ],
-  'Day 3': [
-    {ex:'Band Warm-up', sets:1, reps:'2-3 min'},
-    {ex:'Back Squat', sets:4, reps:'5-8'},
-    {ex:'Incline DB Bench Press', sets:3, reps:10},
-    {ex:'Chest-Supported DB Row', sets:3, reps:10},
-    {ex:'Single-Leg RDL', sets:3, reps:'8/side'},
-    {ex:'Dead Bug', sets:3, reps:'8/side'},
-    {ex:'Hammer Curl', sets:3, reps:12},
-    {ex:'DB Standing Calf Raise', sets:3, reps:15}
-  ]
-};
+// gymProgram is now populated from the Program sheet via loadProgram()
+let gymProgram = { 'Day 1': [], 'Day 2': [], 'Day 3': [] };
+
+async function loadProgram(preFetched) {
+  const rows = preFetched || await fetch(SHEETS_URL + '&sheet=Program').then(r => r.json()).catch(() => []);
+  if (!Array.isArray(rows)) return;
+  const days = { 'Day 1': [], 'Day 2': [], 'Day 3': [] };
+  rows.forEach(r => {
+    const day = (r.Day || '').toString().trim();
+    if (!days[day]) return;
+    const ex = (r.Exercise || '').toString().trim();
+    if (!ex) return;
+    const sets = [];
+    for (let i = 1; i <= 4; i++) {
+      const reps = r['S' + i + ' Reps'];
+      const wt = r['S' + i + ' Wt'];
+      if (reps == null || reps === '') continue;
+      sets.push({ reps: String(reps).trim(), wt: (wt == null || wt === '') ? '' : String(wt).trim() });
+    }
+    days[day].push({
+      ex: ex,
+      group: r.Group || '',
+      sets: sets,
+      notes: (r.Notes || '').toString().trim()
+    });
+  });
+  gymProgram = days;
+  // Re-render the currently-shown day
+  const activeBtn = document.querySelector('.day-btn.active');
+  const day = activeBtn ? activeBtn.textContent.trim() : 'Day 1';
+  if (document.getElementById('workout-list')) renderGymWorkout(day);
+}
+
+// Format sets compactly for display.
+// Same reps/no weight: "3 × 15"
+// Same reps + same wt:  "3 × 8 @ 80"
+// Varies:               "5×185, 3×215, 3×230, 3×235"
+// No weight per set:    "15, 15, 15"
+function formatSets(sets) {
+  if (!sets || !sets.length) return '';
+  const noWt = (w) => !w || w === '-' || w === '';
+  const allSameReps = sets.every(s => s.reps === sets[0].reps);
+  const allNoWt = sets.every(s => noWt(s.wt));
+  const allSameWt = !allNoWt && sets.every(s => s.wt === sets[0].wt);
+  if (allSameReps && allNoWt) return sets.length + ' × ' + sets[0].reps;
+  if (allSameReps && allSameWt) return sets.length + ' × ' + sets[0].reps + ' @ ' + sets[0].wt;
+  return sets.map(s => noWt(s.wt) ? s.reps : (s.reps + '×' + s.wt)).join(', ');
+}
 
 let gymPRs = [];
 let gymVolume = [];
@@ -1424,9 +1442,22 @@ function applyGymPeriod() {
 
 function renderGymWorkout(day) {
   const list = document.getElementById('workout-list');
-  list.innerHTML = gymProgram[day].map(e =>
-    `<div class="workout-row"><span class="ex">${e.ex}</span><span class="sr">${e.sets} x ${e.reps}</span></div>`
-  ).join('');
+  const items = gymProgram[day] || [];
+  if (!items.length) {
+    list.innerHTML = '<div class="workout-row"><span class="ex" style="color:var(--soft);">No exercises in Program sheet for ' + day + '</span></div>';
+    return;
+  }
+  list.innerHTML = items.map(e => {
+    const setStr = formatSets(e.sets);
+    const noteHtml = e.notes ? `<div class="workout-note">${e.notes}</div>` : '';
+    return `<div class="workout-row">
+      <div class="ex-block">
+        <span class="ex">${e.ex}</span>
+        ${noteHtml}
+      </div>
+      <span class="sr">${setStr}</span>
+    </div>`;
+  }).join('');
 }
 
 function showGymDay(day, btn) {
@@ -2261,6 +2292,7 @@ async function loadAll() {
         Exercises: batch.Exercises || [],
         Workouts: batch.Workouts || []
       }).catch(e => console.log('Gym:', e)),
+      loadProgram(batch.Program || []).catch(e => console.log('Program:', e)),
       loadPractice(batch.Practice || []).catch(e => console.log('Practice:', e)),
       loadSettings(batch.Settings || []).catch(e => console.log('Settings:', e))
     ]);
@@ -2269,6 +2301,7 @@ async function loadAll() {
       loadRuns().catch(e => console.log('Runs:', e)),
       loadGolf().catch(e => console.log('Golf:', e)),
       loadGym().catch(e => console.log('Gym:', e)),
+      loadProgram().catch(e => console.log('Program:', e)),
       loadPractice().catch(e => console.log('Practice:', e)),
       loadSettings().catch(e => console.log('Settings:', e))
     ]);
@@ -2415,6 +2448,7 @@ if ('serviceWorker' in navigator) {
     else if (u.includes('sheet=Sessions') || u.includes('sheet=Exercises') || u.includes('sheet=Workouts')) swrReload('gym', loadGym);
     else if (u.includes('sheet=Practice')) swrReload('practice', loadPractice);
     else if (u.includes('sheet=Settings')) swrReload('settings', loadSettings);
+    else if (u.includes('sheet=Program')) swrReload('program', loadProgram);
     else if (u.includes('/exec?') && !u.includes('sheet=')) swrReload('golf', loadGolf);
   });
 }

@@ -1987,6 +1987,80 @@ function loadLoggerDay(day, btn) {
   (gymProgram[day] || []).forEach(e => addLoggerRow(e.ex));
 }
 
+// Walk allGymSorted (newest first) and return the most recent {sets, dateStr}
+// for the given exercise name, or null. Sources data already loaded by loadGym().
+function findLastSets(name) {
+  if (!name || !allGymSorted || !allGymByDate) return null;
+  const target = name.trim().toLowerCase();
+  for (const date of allGymSorted) {
+    const k = date.toISOString().split('T')[0];
+    const sess = allGymByDate[k];
+    if (!sess || !sess.exercises) continue;
+    for (const ex of sess.exercises) {
+      const exName = (ex.ex || '').trim().toLowerCase();
+      const cleanName = exName.replace(/\s*\(per side\)\s*$/i, '');
+      if ((exName === target || cleanName === target) && ex.sets && ex.sets.length) {
+        return {sets: ex.sets, dateStr: k};
+      }
+    }
+  }
+  return null;
+}
+
+function formatLastDate(dateStr) {
+  const parts = dateStr.split('-');
+  const d = new Date(Number(parts[0]), Number(parts[1])-1, Number(parts[2]));
+  const today = new Date(); today.setHours(0,0,0,0);
+  const days = Math.floor((today - d) / 86400000);
+  if (days <= 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 7) return days + 'd ago';
+  return MONTHS[d.getMonth()] + ' ' + d.getDate();
+}
+
+// Read last-session data and apply it to a logger row as placeholders + hint text.
+// Called when row is created and whenever the exercise name changes.
+function updateRowLastHint(row) {
+  const nameEl = row.querySelector('.lg-name');
+  const hintEl = row.querySelector('.lg-last-hint');
+  const repsInputs = row.querySelectorAll('.lg-reps');
+  const wtInputs = row.querySelectorAll('.lg-wt');
+  if (!nameEl || !hintEl) return;
+
+  // Reset
+  repsInputs.forEach(i => i.placeholder = '');
+  wtInputs.forEach(i => i.placeholder = '');
+  hintEl.textContent = '';
+
+  const name = (nameEl.value || '').trim();
+  if (!name) return;
+  const last = findLastSets(name);
+  if (!last) return;
+
+  // Placeholders per set
+  last.sets.forEach((s, i) => {
+    if (repsInputs[i] && s.reps !== '' && s.reps != null) {
+      // Strip "/side" annotation from the placeholder since the reps input is numeric
+      repsInputs[i].placeholder = String(s.reps).replace(/\/?\s*side$/i, '').trim();
+    }
+    if (wtInputs[i] && s.weight !== '' && s.weight != null) {
+      wtInputs[i].placeholder = s.weight === 'BW' ? '' : String(s.weight);
+    }
+  });
+
+  // Inline hint, e.g. "Last Apr 28: 8 / 8 / 8 @ 135"
+  const reps = last.sets.map(s => s.reps).filter(r => r !== '' && r != null).map(String);
+  const wts  = last.sets.map(s => s.weight).filter(w => w !== '' && w != null);
+  const repsTxt = reps.length ? reps.join(' / ') : '';
+  let wtTxt = '';
+  if (wts.length) {
+    const allBW = wts.every(w => w === 'BW');
+    const allSame = wts.every(w => String(w) === String(wts[0]));
+    wtTxt = allBW ? '@ BW' : (allSame ? '@ ' + wts[0] : '@ ' + wts.join(' / '));
+  }
+  hintEl.textContent = ['Last ' + formatLastDate(last.dateStr) + ':', repsTxt, wtTxt].filter(Boolean).join(' ');
+}
+
 // TODO (future): support time-based exercises (e.g. dead hang).
 //   Add a `duration_sec` column on the Sets sheet + a "Time" toggle button on
 //   each logger row (alongside BW / per-side). When Time is on, hide the reps
@@ -2009,6 +2083,7 @@ function addLoggerRow(name) {
       <button type="button" class="lg-ps-btn" onclick="togglePerSide(this)" style="background:#fff;border:0.5px solid #ddd;border-radius:6px;font-size:10px;font-weight:600;color:#888;padding:4px 8px;cursor:pointer;white-space:nowrap;">per side</button>
       <button onclick="this.closest('.logger-row').remove()" style="background:none;border:none;color:#888;font-size:18px;cursor:pointer;padding:0 6px;">×</button>
     </div>
+    <div class="lg-last-hint" style="font-size:10px;color:#888;margin-bottom:4px;min-height:12px;font-style:italic;"></div>
     <div style="display:grid;grid-template-columns:30px repeat(4,1fr);gap:4px;align-items:center;margin-bottom:3px;">
       <span style="font-size:9px;color:#888;">Reps</span>
       <input type="number" class="lg-reps" data-set="1" inputmode="numeric" style="font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;min-width:0;">
@@ -2031,6 +2106,14 @@ function addLoggerRow(name) {
     dl.id = datalistId;
     dl.innerHTML = options;
     document.body.appendChild(dl);
+  }
+  // Pre-fill placeholders + hint with last session's data for this exercise
+  updateRowLastHint(row);
+  const nameEl = row.querySelector('.lg-name');
+  if (nameEl) {
+    // 'change' fires when user picks from datalist or blurs the input
+    nameEl.addEventListener('change', () => updateRowLastHint(row));
+    nameEl.addEventListener('input', () => updateRowLastHint(row));
   }
 }
 

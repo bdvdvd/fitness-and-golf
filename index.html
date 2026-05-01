@@ -1188,6 +1188,15 @@ let gymDates = [];     // all gym session Date objects
 let gymLatest = null;  // {date, day, lifts}
 let allGymByDate = {}; // raw session map keyed by dateStr
 let allGymSorted = []; // all session objects newest first
+let muscleMap = {};    // raw exercise name -> {canonical, muscle}, populated in loadGym
+const PR_MATCHERS = [
+  {name:'Bench Press',      match:(c,w) => c === 'Barbell Bench Press'},
+  {name:'Back Squat',       match:(c,w) => c === 'Back Squat'},
+  {name:'Hex Bar DL',       match:(c,w) => c === 'Hex Bar Deadlift'},
+  {name:'OH Press',         match:(c,w) => c === 'DB Overhead Press' || c === 'Overhead Press'},
+  {name:'Barbell Row',      match:(c,w) => c === 'Barbell Row'},
+  {name:'Weighted Pull-Up', match:(c,w) => c === 'Pull-Up' && Number(w) > 0}
+];
 
 async function loadGym(preFetched) {
   const [sessions, exercises, workouts] = preFetched
@@ -1216,7 +1225,7 @@ async function loadGym(preFetched) {
       calories: Number(w.Calories) || 0
     };
   });
-  const muscleMap = {};
+  muscleMap = {};
   exercises.forEach(e => {
     muscleMap[e['Raw name']] = {canonical: e.Canonical, muscle: e['Muscle group']};
   });
@@ -1229,14 +1238,6 @@ async function loadGym(preFetched) {
 
   const byDate = {};
   const prs = {};
-  const PR_MATCHERS = [
-    {name:'Bench Press',      match:(c,w) => c === 'Barbell Bench Press'},
-    {name:'Back Squat',       match:(c,w) => c === 'Back Squat'},
-    {name:'Hex Bar DL',       match:(c,w) => c === 'Hex Bar Deadlift'},
-    {name:'OH Press',         match:(c,w) => c === 'DB Overhead Press' || c === 'Overhead Press'},
-    {name:'Barbell Row',      match:(c,w) => c === 'Barbell Row'},
-    {name:'Weighted Pull-Up', match:(c,w) => c === 'Pull-Up' && Number(w) > 0}
-  ];
   const vol = {Chest:0, Back:0, Legs:0, Shoulders:0, Arms:0, Core:0};
 
   const unmapped = new Set();
@@ -1309,11 +1310,11 @@ async function loadGym(preFetched) {
   const prConfig = ['Bench Press','Back Squat','Hex Bar DL','OH Press','Barbell Row','Weighted Pull-Up'];
   gymPRs = prConfig.map(name => {
     const pr = prs[name];
-    if (!pr) return {lift: name, val: '-', sub: 'No data'};
+    if (!pr) return {lift: name, val: '-', sub: 'No data', weight: 0};
     const d = new Date(pr.dateStr);
     const lbl = MONTHS[d.getMonth()] + ' ' + d.getDate();
     const val = name === 'Weighted Pull-Up' ? '+' + pr.weight : pr.weight;
-    return {lift: name, val, sub: pr.reps + ' x ' + pr.weight + ' · ' + lbl};
+    return {lift: name, val, sub: pr.reps + ' x ' + pr.weight + ' · ' + lbl, weight: pr.weight};
   });
 
   allGymByDate = byDate;
@@ -1987,6 +1988,36 @@ function loadLoggerDay(day, btn) {
   (gymProgram[day] || []).forEach(e => addLoggerRow(e.ex));
 }
 
+// Compare a freshly-submitted exercises array against the existing gymPRs and
+// return any PRs that were beaten. Each result: {lift, weight, reps}.
+function detectNewPRs(exercises) {
+  if (!exercises || !exercises.length || !gymPRs || !gymPRs.length || !muscleMap) return [];
+  const out = [];
+  for (const ex of exercises) {
+    const cleanName = (ex.name || '').replace(/\s*\(per side\)\s*$/i, '').trim();
+    const m = muscleMap[ex.name] || muscleMap[cleanName];
+    if (!m) continue;
+    for (const matcher of PR_MATCHERS) {
+      let bestWt = 0, bestReps = 0;
+      for (const set of (ex.sets || [])) {
+        const w = Number(set.weight);
+        const r = Number(set.reps);
+        if (isNaN(w) || isNaN(r) || !r) continue;
+        if (matcher.match(m.canonical, w) && w > bestWt) {
+          bestWt = w; bestReps = r;
+        }
+      }
+      if (!bestWt) continue;
+      const existing = gymPRs.find(p => p.lift === matcher.name);
+      const existingWt = (existing && Number(existing.weight)) || 0;
+      if (bestWt > existingWt) {
+        out.push({lift: matcher.name, weight: bestWt, reps: bestReps});
+      }
+    }
+  }
+  return out;
+}
+
 // Walk allGymSorted (newest first) and return the most recent {sets, dateStr}
 // for the given exercise name, or null. Sources data already loaded by loadGym().
 function findLastSets(name) {
@@ -2168,7 +2199,14 @@ async function submitLogger() {
     });
     const data = await res.json();
     if (data.ok) {
-      status.textContent = 'Saved ' + data.added + ' rows. Refresh Gym tab to see.'; status.style.color = '#1D9E75';
+      const newPRs = detectNewPRs(rows);
+      if (newPRs.length) {
+        const prTxt = newPRs.map(p => p.lift + ' ' + p.weight + ' lbs').join(' · ');
+        status.textContent = '🎉 New PR! ' + prTxt;
+      } else {
+        status.textContent = 'Saved ' + data.added + ' rows. Refresh Gym tab to see.';
+      }
+      status.style.color = '#1D9E75';
       clearLoggerDraft();
     } else {
       status.textContent = 'Error: ' + data.error; status.style.color = '#E24B4A';

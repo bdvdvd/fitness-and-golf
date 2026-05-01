@@ -505,7 +505,10 @@ body { overscroll-behavior-y: contain; }
 
 <div class="section" id="section-gym">
 
-<h1>Gym</h1>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+  <h1 style="margin:0;">Gym</h1>
+  <button class="day-btn" id="gym-sync-btn" onclick="syncStravaNow(this)" style="flex:0 0 auto;padding:6px 12px;font-size:11px;">Sync Strava</button>
+</div>
 <p class="subtitle" id="gym-subtitle">3x full-body per week · 4-week rotations</p>
 
 <div class="period-filter" data-tab="gym">
@@ -2484,6 +2487,35 @@ async function loadAll() {
   gymInited = true;
 }
 loadAll();
+
+// --- Manual Strava sync (calls Apps Script syncStrava + syncGym, then refreshes) ---
+async function syncStravaNow(btn) {
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Syncing...';
+  try {
+    const res = await fetch(SHEETS_URL.split('?')[0], {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify({key:'bdv-8f3k-2026', action:'syncNow'})
+    });
+    const data = await res.json();
+    if (data.ok) {
+      btn.textContent = 'Synced ✓';
+      await forceRefresh();
+    } else {
+      btn.textContent = 'Failed';
+      console.error('Sync errors:', data.errors);
+    }
+  } catch (e) {
+    btn.textContent = 'Failed';
+    console.error('Sync request failed:', e);
+  }
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.textContent = original;
+  }, 2500);
+}
 
 // --- Pull to refresh ---
 async function forceRefresh() {

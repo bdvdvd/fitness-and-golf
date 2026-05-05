@@ -260,7 +260,7 @@ body { overscroll-behavior-y: contain; }
 
 <div class="metrics-row">
   <div class="mc"><div class="mc-label">Latest round</div><div class="mc-val" id="home-golf-val"><span class="sk sk-val"></span></div><div class="mc-sub" id="home-golf-sub"><span class="sk sk-sub"></span></div></div>
-  <div class="mc"><div class="mc-label">Handicap</div><div class="mc-val">10.3</div><div class="mc-sub">target 7.0</div></div>
+  <div class="mc"><div class="mc-label">Handicap</div><div class="mc-val" id="home-golf-hcp"><span class="sk sk-val"></span></div><div class="mc-sub" id="home-golf-hcp-sub"><span class="sk sk-sub"></span></div></div>
   <div class="mc"><div class="mc-label">Latest practice</div><div class="mc-val" id="home-practice-val"><span class="sk sk-val"></span></div><div class="mc-sub" id="home-practice-sub"><span class="sk sk-sub"></span></div></div>
 </div>
 
@@ -324,7 +324,7 @@ body { overscroll-behavior-y: contain; }
 <div class="section" id="section-golf">
 
 <h1>Golf</h1>
-<p class="subtitle" id="golf-subtitle">Pitt Meadows GC · Goal: 7 handicap (current 10.3)</p>
+<p class="subtitle" id="golf-subtitle">Loading...</p>
 
 <div class="period-filter" data-tab="golf">
   <button onclick="setPeriod('golf',7,this)">7d</button>
@@ -337,7 +337,7 @@ body { overscroll-behavior-y: contain; }
   <div class="mc"><div class="mc-label">Rounds</div><div class="mc-val" id="golf-rounds"><span class="sk sk-val"></span></div><div class="mc-sub" id="golf-rounds-sub"><span class="sk sk-sub"></span></div></div>
   <div class="mc"><div class="mc-label">Scoring avg</div><div class="mc-val" id="golf-score-avg"><span class="sk sk-val"></span></div><div class="mc-sub" id="golf-score-sub"><span class="sk sk-sub"></span></div></div>
   <div class="mc"><div class="mc-label">Last 5 avg</div><div class="mc-val" id="golf-last5"><span class="sk sk-val"></span></div><div class="mc-sub" id="golf-last5-sub"><span class="sk sk-sub"></span></div></div>
-  <div class="mc"><div class="mc-label">Handicap</div><div class="mc-val" id="golf-handicap">10.3</div><div class="mc-sub">Golf Canada</div></div>
+  <div class="mc"><div class="mc-label">Handicap</div><div class="mc-val" id="golf-handicap"><span class="sk sk-val"></span></div><div class="mc-sub">Golf Canada</div></div>
 </div>
 
 <div class="metrics-row">
@@ -434,7 +434,7 @@ body { overscroll-behavior-y: contain; }
 </div>
 
 <div class="goal-box">
-  <h3 id="golf-targets-heading">Road to 7 handicap · from 10.3</h3>
+  <h3 id="golf-targets-heading">Targets</h3>
   <div class="goal-stats">
     <div class="goal-stat">Score target<span id="golf-target-score">≤ 82</span></div>
     <div class="goal-stat">FIR target<span id="golf-target-fir">60%</span></div>
@@ -969,7 +969,6 @@ function renderGolfHeader() {
     set('golf-last5-sub', '');
   }
 
-  // Handicap from settings (fall back to 10.3)
   if (SETTINGS && SETTINGS.golfHandicap) set('golf-handicap', SETTINGS.golfHandicap);
 
   // Card 5-8: percentages in period
@@ -2956,17 +2955,37 @@ function renderSettings() {
   if (s.ltPace) set('vo2max-sub', 'LT: ' + s.ltPace);
 
   // Golf
-  set('golf-subtitle', s.golfGoal);
+  const subEl = document.getElementById('golf-subtitle');
+  if (subEl) {
+    if (s.golfGoal) {
+      subEl.textContent = s.golfGoal;
+    } else if (s.golfHandicap || s.golfTargetHandicap) {
+      const cur = s.golfHandicap || '—';
+      const tgt = s.golfTargetHandicap || 7;
+      subEl.textContent = 'Goal: ' + tgt + ' handicap (current ' + cur + ')';
+    } else {
+      subEl.textContent = '';
+    }
+  }
   if (s.golfTargetScore) set('golf-target-score', '≤ ' + s.golfTargetScore);
   if (s.golfTargetFIR) set('golf-target-fir', s.golfTargetFIR + '%');
   if (s.golfTargetGIR) set('golf-target-gir', s.golfTargetGIR + '%');
   if (s.golfTargetPutts) set('golf-target-putts', '≤ ' + s.golfTargetPutts);
   if (s.golfTarget3Putts) set('golf-target-3putts', '≤ ' + s.golfTarget3Putts + '/rd');
+  // Home Golf handicap tile
+  const hcpEl = document.getElementById('home-golf-hcp');
+  if (hcpEl) hcpEl.textContent = s.golfHandicap || '—';
+  const hcpSubEl = document.getElementById('home-golf-hcp-sub');
+  if (hcpSubEl) {
+    hcpSubEl.textContent = s.golfTargetHandicap
+      ? 'target ' + Number(s.golfTargetHandicap).toFixed(1)
+      : '';
+  }
   // Dynamic targets heading: "Road to {targetHcp} handicap · from {currentHcp}"
   const headEl = document.getElementById('golf-targets-heading');
-  if (headEl) {
+  if (headEl && (s.golfHandicap || s.golfTargetHandicap)) {
     const tgtHcp = s.golfTargetHandicap || 7;
-    const curHcp = s.golfHandicap || '10.3';
+    const curHcp = s.golfHandicap || '—';
     headEl.textContent = 'Road to ' + tgtHcp + ' handicap · from ' + curHcp;
   }
   if (s.practiceTargetHours) {

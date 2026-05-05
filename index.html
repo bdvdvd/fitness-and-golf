@@ -450,12 +450,18 @@ body { overscroll-behavior-y: contain; }
     <span>Strokes-gained breakdown</span>
     <span id="golf-breakdown-sub" style="font-size:10px;color:#888;font-weight:400;"></span>
   </h3>
+  <div style="font-size:10px;color:var(--soft);margin-bottom:10px;line-height:1.4;">
+    Each row is your estimated strokes per round vs a 7-handicap baseline.
+    <strong style="color:#E24B4A;">Negative</strong> = strokes lost (worse than target).
+    <strong style="color:#1D9E75;">Positive</strong> = strokes gained (better than target).
+    Closer to <strong>0.0</strong> is the goal — the totals tell you how far you are from playing like a 7 hcp.
+  </div>
   <div id="golf-breakdown-rows"></div>
   <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#5c3d0b;background:var(--gym-wash, #fdf6ef);border-radius:6px;padding:6px 10px;margin-top:8px;border:0.5px solid #f0e4d2;">
-    <span>Total estimated vs 7 hcp baseline</span>
+    <span>Total vs 7 hcp baseline</span>
     <span id="golf-breakdown-total" style="font-weight:600;">-</span>
   </div>
-  <div style="font-size:10px;color:var(--soft);margin-top:6px;">Based on per-hole data; needs at least 1 round in the new format. Bars show performance vs 7-handicap baseline.</div>
+  <div style="font-size:10px;color:var(--soft);margin-top:6px;">Bars show performance vs the 7-hcp target (red = far below, green = at or above). Estimates use rough per-shot coefficients; directional rather than precise.</div>
 </div>
 
 <div class="tabs">
@@ -1217,19 +1223,33 @@ function renderGolfBreakdown() {
     }
   ];
 
-  rowsEl.innerHTML = cats.map(c => `
+  // Format strokes-gained value: negative = lost, positive = gained, "0.0" = on target.
+  const fmtSG = (v) => {
+    const n = Number(v) || 0;
+    if (Math.abs(n) < 0.05) return '0.0';
+    return (n < 0 ? '−' : '+') + Math.abs(n).toFixed(1);
+  };
+  const sgColor = (v) => Number(v) < -0.05 ? '#E24B4A' : (Number(v) > 0.05 ? '#1D9E75' : '#888');
+
+  rowsEl.innerHTML = cats.map(c => {
+    // estimateStrokesLost returns positive numbers for strokes lost; flip sign for display.
+    const sg = -c.lost;
+    return `
     <div style="margin-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:12px;margin-bottom:2px;">
         <span style="font-weight:500;">${c.label}</span>
-        <span style="color:#888;font-size:10px;">+${c.lost.toFixed(1)} strokes/rd</span>
+        <span style="color:${sgColor(sg)};font-size:11px;font-weight:500;">${fmtSG(sg)} strokes/rd</span>
       </div>
       <div style="font-size:10px;color:#888;margin-bottom:3px;">${c.detail}</div>
       <div style="background:#eee;border-radius:6px;height:6px;overflow:hidden;">
         <div style="width:${c.bar.pct}%;height:100%;background:${c.bar.color};border-radius:6px;transition:width 0.3s;"></div>
       </div>
     </div>
-  `).join('');
-  totalEl.textContent = '+' + lost.total.toFixed(1) + ' strokes/rd';
+  `;
+  }).join('');
+  const totalSG = -lost.total;
+  totalEl.textContent = fmtSG(totalSG) + ' strokes/rd';
+  totalEl.style.color = sgColor(totalSG);
 }
 
 function renderGolfTable() {

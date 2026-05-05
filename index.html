@@ -445,6 +445,19 @@ body { overscroll-behavior-y: contain; }
   <div style="font-size:10px;color:var(--soft);margin-top:6px;">Edit targets in Settings (top right gear)</div>
 </div>
 
+<div class="workout-box" id="golf-breakdown-box" style="display:none;">
+  <h3 style="display:flex;justify-content:space-between;align-items:center;">
+    <span>Strokes-gained breakdown</span>
+    <span id="golf-breakdown-sub" style="font-size:10px;color:#888;font-weight:400;"></span>
+  </h3>
+  <div id="golf-breakdown-rows"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#5c3d0b;background:var(--gym-wash, #fdf6ef);border-radius:6px;padding:6px 10px;margin-top:8px;border:0.5px solid #f0e4d2;">
+    <span>Total estimated vs 7 hcp baseline</span>
+    <span id="golf-breakdown-total" style="font-weight:600;">-</span>
+  </div>
+  <div style="font-size:10px;color:var(--soft);margin-top:6px;">Based on per-hole data; needs at least 1 round in the new format. Bars show performance vs 7-handicap baseline.</div>
+</div>
+
 <div class="tabs">
   <button class="tab active" onclick="showGolfChart('score',this)">Score</button>
   <button class="tab" onclick="showGolfChart('fir',this)">FIR %</button>
@@ -630,6 +643,7 @@ function setPeriod(tab, days, btn) {
   }
   if (tab === 'golf') {
     applyGolfPeriod();
+    renderGolfBreakdown();
     renderGolfTable();
     showGolfChart(activeGolfChart || 'score');
   }
@@ -850,9 +864,20 @@ function applyGolfPeriod() {
   renderGolfHeader();
 }
 
-async function loadGolf(preFetched) {
-  const data = preFetched || await fetch(SHEETS_URL).then(r => r.json());
-  allRounds = data.map(r => ({
+let allHoles = []; // raw per-hole rows from the Holes sheet
+async function loadGolf(preFetched, holesPreFetched) {
+  let roundsData, holesData;
+  if (preFetched) {
+    // Both Rounds and Holes can be passed via batch (loadAll passes them).
+    roundsData = Array.isArray(preFetched) ? preFetched : (preFetched.Rounds || []);
+    holesData  = Array.isArray(preFetched) ? (holesPreFetched || []) : (preFetched.Holes || []);
+  } else {
+    [roundsData, holesData] = await Promise.all([
+      fetch(SHEETS_URL).then(r => r.json()),
+      fetch(SHEETS_URL + '&sheet=Holes').then(r => r.json()).catch(() => [])
+    ]);
+  }
+  allRounds = roundsData.map(r => ({
     rawDate: new Date(r.Date),
     date:    fmtDate(r.Date),
     course:  shortCourse(r.Course),
@@ -864,8 +889,23 @@ async function loadGolf(preFetched) {
     threePutts: numOrNull(r['3-Putts'] != null && r['3-Putts'] !== '' ? r['3-Putts'] : r.ThreePutts),
     notes:   r.Notes || ''
   }));
+  allHoles = (holesData || []).map(h => ({
+    rawDate: new Date(h.Date),
+    course:  h.Course || '',
+    tees:    h.Tees || '',
+    hole:    Number(h.Hole) || 0,
+    par:     Number(h.Par) || 0,
+    score:   Number(h.Score) || 0,
+    putts:   Number(h.Putts) || 0,
+    fw:      h.FW || '-',
+    ud:      h.UD || '-',
+    sand:    h.Sand || '-',
+    dblChip: Number(h.DblChip) || 0,
+    pen:     Number(h.Pen) || 0
+  })).filter(h => h.hole > 0);
   applyGolfPeriod();
   renderGolfHeader();
+  renderGolfBreakdown();
   renderGolfTable();
   if (document.getElementById('section-golf').classList.contains('active')) {
     showGolfChart('score', document.querySelector('#section-golf .tab'));
@@ -1025,6 +1065,171 @@ function renderGolfYtdGoal() {
     <div class="goal-value">${ytd} / ${target}</div>
     <div class="goal-bar"><div class="goal-fill golf${done}" style="width:${pct}%;"></div></div>
   </div>`;
+}
+
+// 7-handicap baseline used for the strokes-gained-style breakdown.
+const HCP7_BASELINE = {
+  fwPct: 52,        // % of par-4/5 fairways hit
+  girPct: 42,       // % of greens in regulation
+  udPct: 47,        // % of up-and-down attempts converted
+  sandPct: 30,      // % of sand-save attempts converted
+  putts: 31,        // putts per round
+  threePutts: 1,    // 3-putts per round
+  penalties: 1,     // penalty strokes per round
+  dblChips: 0       // double chips per round
+};
+
+// Compute aggregated per-round metrics from per-hole rows in the current period.
+function computeBreakdownFromHoles(holes) {
+  if (!holes.length) return null;
+  // Group holes by date+course (a round)
+  const byRound = {};
+  holes.forEach(h => {
+    const k = (h.rawDate ? h.rawDate.toISOString().split('T')[0] : '') + '|' + h.course;
+    if (!byRound[k]) byRound[k] = [];
+    byRound[k].push(h);
+  });
+  const rounds = Object.values(byRound);
+  const nRounds = rounds.length;
+  if (!nRounds) return null;
+
+  let totalPar4or5=0, fwHit=0, girHit=0, holesPlayed=0, totalPutts=0, totalThreePutts=0;
+  let udAtt=0, udMade=0, sandAtt=0, sandMade=0, totalDblChips=0, totalPen=0;
+  rounds.forEach(roundHoles => {
+    roundHoles.forEach(h => {
+      if (h.par === 4 || h.par === 5) totalPar4or5++;
+      if (h.fw === 'H') fwHit++;
+      if (h.score > 0 && (h.score - h.putts) <= (h.par - 2)) girHit++;
+      if (h.score > 0) holesPlayed++;
+      totalPutts += h.putts;
+      if (h.putts >= 3) totalThreePutts++;
+      if (h.ud === 'Att')  udAtt++;
+      if (h.ud === 'Made') { udAtt++; udMade++; }
+      if (h.sand === 'Att')  sandAtt++;
+      if (h.sand === 'Save') { sandAtt++; sandMade++; }
+      totalDblChips += h.dblChip;
+      totalPen += h.pen;
+    });
+  });
+
+  return {
+    nRounds,
+    fwPct:   totalPar4or5 ? (fwHit / totalPar4or5) * 100 : 0,
+    girPct:  holesPlayed  ? (girHit / holesPlayed) * 100 : 0,
+    udPct:   udAtt        ? (udMade / udAtt) * 100 : 0,
+    sandPct: sandAtt      ? (sandMade / sandAtt) * 100 : 0,
+    puttsPerRound:      totalPutts / nRounds,
+    threePuttsPerRound: totalThreePutts / nRounds,
+    dblChipsPerRound:   totalDblChips / nRounds,
+    penaltiesPerRound:  totalPen / nRounds
+  };
+}
+
+// Estimate strokes lost per round vs the 7-handicap baseline, broken into 4 categories.
+function estimateStrokesLost(m) {
+  const b = HCP7_BASELINE;
+  // Driving: penalty diff (1:1) + missed-FW deficit (~0.3 strokes per missed FW vs 7 hcp)
+  const penaltyDiff = Math.max(0, m.penaltiesPerRound - b.penalties);
+  const expectedFwMisses = 14 * (1 - b.fwPct / 100);
+  const actualFwMisses   = 14 * (1 - m.fwPct  / 100);
+  const drivingFW = Math.max(0, (actualFwMisses - expectedFwMisses) * 0.3);
+  const driving = drivingFW + penaltyDiff;
+
+  // Approach: missed-GIR deficit (~0.45 strokes per missed GIR)
+  const expectedGirMisses = 18 * (1 - b.girPct / 100);
+  const actualGirMisses   = 18 * (1 - m.girPct  / 100);
+  const approach = Math.max(0, (actualGirMisses - expectedGirMisses) * 0.45);
+
+  // Short game: U&D conversion deficit + sand save deficit + double chips (each = ~1 stroke)
+  const expectedUDOpps   = actualGirMisses;        // roughly each missed green is a U&D chance
+  const expectedUDMade   = expectedUDOpps * (b.udPct / 100);
+  const actualUDMade     = expectedUDOpps * (m.udPct / 100);
+  const udLoss   = Math.max(0, expectedUDMade - actualUDMade);
+  const sandLoss = m.sandPct < b.sandPct ? Math.max(0, (b.sandPct - m.sandPct) / 100 * 1.5) : 0; // small contribution
+  const shortGame = udLoss + sandLoss + m.dblChipsPerRound;
+
+  // Putting: extra putts above baseline (capped to 3-putt diff influence)
+  const puttDiff   = Math.max(0, m.puttsPerRound - b.putts);
+  const threePuttDiff = Math.max(0, m.threePuttsPerRound - b.threePutts);
+  const putting = puttDiff + threePuttDiff * 0.5; // 3-putts contribute extra weight
+
+  return {
+    driving:   driving,
+    approach:  approach,
+    shortGame: shortGame,
+    putting:   putting,
+    total:     driving + approach + shortGame + putting
+  };
+}
+
+function breakdownBar(actualPct, targetPct, lowerIsBetter) {
+  // Returns {fillPct, color}
+  const ratio = lowerIsBetter
+    ? (actualPct > 0 ? targetPct / actualPct : 1)
+    : (targetPct > 0 ? actualPct / targetPct : 0);
+  const pct = Math.max(4, Math.min(100, Math.round(ratio * 100)));
+  let color = '#E24B4A';
+  if (ratio >= 0.9)  color = '#1D9E75';
+  else if (ratio >= 0.6) color = '#BA7517';
+  return {pct, color};
+}
+
+function renderGolfBreakdown() {
+  const box = document.getElementById('golf-breakdown-box');
+  const rowsEl = document.getElementById('golf-breakdown-rows');
+  const subEl = document.getElementById('golf-breakdown-sub');
+  const totalEl = document.getElementById('golf-breakdown-total');
+  if (!box || !rowsEl) return;
+
+  const cutoff = periodCutoff('golf');
+  const periodHoles = (allHoles || []).filter(h => !cutoff || h.rawDate >= cutoff);
+  const m = computeBreakdownFromHoles(periodHoles);
+  if (!m) { box.style.display = 'none'; return; }
+  box.style.display = '';
+
+  const lost = estimateStrokesLost(m);
+  subEl.textContent = periodLabel('golf') + ' · ' + m.nRounds + ' round' + (m.nRounds === 1 ? '' : 's');
+
+  const cats = [
+    {
+      label: 'Driving',
+      detail: m.fwPct.toFixed(0) + '% FW · ' + m.penaltiesPerRound.toFixed(1) + ' pen/rd',
+      lost: lost.driving,
+      bar: breakdownBar(m.fwPct, HCP7_BASELINE.fwPct, false)
+    },
+    {
+      label: 'Approach',
+      detail: m.girPct.toFixed(0) + '% GIR',
+      lost: lost.approach,
+      bar: breakdownBar(m.girPct, HCP7_BASELINE.girPct, false)
+    },
+    {
+      label: 'Short game',
+      detail: m.udPct.toFixed(0) + '% U&D · ' + m.sandPct.toFixed(0) + '% sand · ' + m.dblChipsPerRound.toFixed(1) + ' dbl chips/rd',
+      lost: lost.shortGame,
+      bar: breakdownBar(m.udPct, HCP7_BASELINE.udPct, false)
+    },
+    {
+      label: 'Putting',
+      detail: m.puttsPerRound.toFixed(1) + ' putts · ' + m.threePuttsPerRound.toFixed(1) + ' three-putts/rd',
+      lost: lost.putting,
+      bar: breakdownBar(m.puttsPerRound, HCP7_BASELINE.putts, true)
+    }
+  ];
+
+  rowsEl.innerHTML = cats.map(c => `
+    <div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:12px;margin-bottom:2px;">
+        <span style="font-weight:500;">${c.label}</span>
+        <span style="color:#888;font-size:10px;">+${c.lost.toFixed(1)} strokes/rd</span>
+      </div>
+      <div style="font-size:10px;color:#888;margin-bottom:3px;">${c.detail}</div>
+      <div style="background:#eee;border-radius:6px;height:6px;overflow:hidden;">
+        <div style="width:${c.bar.pct}%;height:100%;background:${c.bar.color};border-radius:6px;transition:width 0.3s;"></div>
+      </div>
+    </div>
+  `).join('');
+  totalEl.textContent = '+' + lost.total.toFixed(1) + ' strokes/rd';
 }
 
 function renderGolfTable() {
@@ -2775,7 +2980,7 @@ async function loadAll() {
   if (batch) {
     await Promise.all([
       loadRuns(batch.Runs || []).catch(e => console.log('Runs:', e)),
-      loadGolf(batch.Rounds || []).catch(e => console.log('Golf:', e)),
+      loadGolf(batch.Rounds || [], batch.Holes || []).catch(e => console.log('Golf:', e)),
       loadGym({
         Sessions: batch.Sessions || [],
         Exercises: batch.Exercises || [],

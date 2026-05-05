@@ -385,7 +385,7 @@ body { overscroll-behavior-y: contain; }
             <th style="padding:2px 1px;text-align:center;width:38px;">Par</th>
             <th style="padding:2px 1px;text-align:center;width:50px;">Score</th>
             <th style="padding:2px 1px;text-align:center;width:50px;">Putts</th>
-            <th style="padding:2px 1px;text-align:center;width:60px;">FW</th>
+            <th style="padding:2px 1px;text-align:center;width:80px;">FW</th>
             <th style="padding:2px 1px;text-align:center;width:60px;">U&D</th>
             <th style="padding:2px 1px;text-align:center;width:60px;">Sand</th>
             <th style="padding:2px 1px;text-align:center;width:38px;">DC</th>
@@ -1629,11 +1629,11 @@ function buildHoleGrid() {
         <td><input type="number" class="h-putts" inputmode="numeric" style="width:100%;font-size:11px;padding:3px;border:0.5px solid #ddd;border-radius:4px;text-align:center;"></td>
         <td><select class="h-fw" style="width:100%;font-size:11px;padding:2px 0;border:0.5px solid #ddd;border-radius:4px;background:#fff;text-align:center;">
           <option value="-">-</option>
-          <option value="H">H</option>
-          <option value="L">L</option>
-          <option value="R">R</option>
-          <option value="S">S</option>
-          <option value="Lo">Lo</option>
+          <option value="H">Hit</option>
+          <option value="L">Left</option>
+          <option value="R">Right</option>
+          <option value="S">Short</option>
+          <option value="Lo">Long</option>
         </select></td>
         <td><button type="button" class="h-ud cycle-btn" data-state="-" onclick="cycleUD(this)" style="width:100%;font-size:11px;padding:3px 0;border:0.5px solid #ddd;border-radius:4px;background:#fff;color:#888;cursor:pointer;font-weight:500;">-</button></td>
         <td><button type="button" class="h-sand cycle-btn" data-state="-" onclick="cycleSand(this)" style="width:100%;font-size:11px;padding:3px 0;border:0.5px solid #ddd;border-radius:4px;background:#fff;color:#888;cursor:pointer;font-weight:500;">-</button></td>

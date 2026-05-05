@@ -366,7 +366,7 @@ body { overscroll-behavior-y: contain; }
     <span>Log round</span>
     <button class="day-btn" style="flex:0 0 auto;padding:4px 14px;" onclick="toggleGolfLogger()" id="golf-logger-toggle-btn">Open</button>
   </h3>
-  <div id="golf-logger-body" style="display:none;max-width:600px;">
+  <div id="golf-logger-body" style="display:none;max-width:900px;">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
       <label style="font-size:10px;color:#888;">Date<input type="date" id="g-date" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
       <label style="font-size:10px;color:#888;">Course<input type="text" id="g-course" list="g-course-dl" value="Pitt Meadows" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"><datalist id="g-course-dl"></datalist></label>
@@ -378,18 +378,18 @@ body { overscroll-behavior-y: contain; }
       </div>
     </div>
     <div style="background:#f8f8f6;border-radius:8px;padding:6px;margin-bottom:6px;overflow-x:auto;">
-      <table id="hole-grid" style="width:100%;max-width:560px;margin:0 auto;font-size:11px;border-collapse:collapse;table-layout:fixed;">
+      <table id="hole-grid" style="width:100%;max-width:780px;margin:0 auto;font-size:12px;border-collapse:collapse;table-layout:fixed;">
         <thead>
           <tr style="color:#888;font-weight:500;">
-            <th style="padding:2px 1px;text-align:center;width:24px;">#</th>
-            <th style="padding:2px 1px;text-align:center;width:38px;">Par</th>
-            <th style="padding:2px 1px;text-align:center;width:50px;">Score</th>
-            <th style="padding:2px 1px;text-align:center;width:50px;">Putts</th>
-            <th style="padding:2px 1px;text-align:center;width:80px;">FW</th>
-            <th style="padding:2px 1px;text-align:center;width:60px;">U&D</th>
-            <th style="padding:2px 1px;text-align:center;width:60px;">Sand</th>
-            <th style="padding:2px 1px;text-align:center;width:38px;">DC</th>
-            <th style="padding:2px 1px;text-align:center;width:38px;">Pen</th>
+            <th style="padding:2px 1px;text-align:center;width:30px;">#</th>
+            <th style="padding:2px 1px;text-align:center;width:50px;">Par</th>
+            <th style="padding:2px 1px;text-align:center;width:70px;">Score</th>
+            <th style="padding:2px 1px;text-align:center;width:70px;">Putts</th>
+            <th style="padding:2px 1px;text-align:center;width:110px;">FW</th>
+            <th style="padding:2px 1px;text-align:center;width:90px;">U&D</th>
+            <th style="padding:2px 1px;text-align:center;width:90px;">Sand</th>
+            <th style="padding:2px 1px;text-align:center;width:50px;">DC</th>
+            <th style="padding:2px 1px;text-align:center;width:50px;">Pen</th>
           </tr>
         </thead>
         <tbody id="hole-grid-body"></tbody>

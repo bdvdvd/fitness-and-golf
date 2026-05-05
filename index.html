@@ -369,37 +369,31 @@ body { overscroll-behavior-y: contain; }
   <div id="golf-logger-body" style="display:none;">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
       <label style="font-size:10px;color:#888;">Date<input type="date" id="g-date" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
-      <label style="font-size:10px;color:#888;">Course<input type="text" id="g-course" value="Pitt Meadows" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
+      <label style="font-size:10px;color:#888;">Course<input type="text" id="g-course" list="g-course-dl" value="Pitt Meadows" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"><datalist id="g-course-dl"></datalist></label>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
-      <label style="font-size:10px;color:#888;">Tees<select id="g-tees" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;background:#fff;"><option>Black</option><option>Blue</option><option>White</option></select></label>
-      <label style="font-size:10px;color:#888;">Score<input type="number" id="g-score" inputmode="numeric" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
-    </div>
-    <div style="background:#f8f8f6;border-radius:8px;padding:8px;margin-bottom:6px;">
-      <div style="font-size:10px;color:#888;margin-bottom:4px;">Fairways (total 14 par 4/5s)</div>
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;">
-        <label style="font-size:9px;color:#888;">Hit<input type="number" id="g-fw-hit" inputmode="numeric" style="width:100%;font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
-        <label style="font-size:9px;color:#888;">Left<input type="number" id="g-fw-left" inputmode="numeric" style="width:100%;font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
-        <label style="font-size:9px;color:#888;">Right<input type="number" id="g-fw-right" inputmode="numeric" style="width:100%;font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
-        <label style="font-size:9px;color:#888;">Short<input type="number" id="g-fw-short" inputmode="numeric" style="width:100%;font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
-        <label style="font-size:9px;color:#888;">Long<input type="number" id="g-fw-long" inputmode="numeric" style="width:100%;font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
+      <label style="font-size:10px;color:#888;">Tees<input type="text" id="g-tees" list="g-tees-dl" value="White" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"><datalist id="g-tees-dl"></datalist></label>
+      <div style="font-size:10px;color:#888;display:flex;flex-direction:column;justify-content:flex-end;">
+        <div id="g-live-totals" style="font-size:10px;color:#5c3d0b;background:var(--gym-wash, #fdf6ef);border-radius:6px;padding:5px 8px;margin-top:2px;border:0.5px solid #f0e4d2;">Score - · Putts - · GIR -/18</div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
-      <label style="font-size:10px;color:#888;">GIR (of 18)<input type="number" id="g-gir" inputmode="numeric" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
-      <label style="font-size:10px;color:#888;">Putts<input type="number" id="g-putts" inputmode="numeric" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
-      <label style="font-size:10px;color:#888;">Penalties<input type="number" id="g-pen" inputmode="numeric" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
-      <label style="font-size:10px;color:#888;">3-Putts<input type="number" id="g-3p" inputmode="numeric" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
-      <label style="font-size:10px;color:#888;">U&D Att<input type="number" id="g-ud-att" inputmode="numeric" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
-      <label style="font-size:10px;color:#888;">U&D Made<input type="number" id="g-ud-made" inputmode="numeric" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
-      <label style="font-size:10px;color:#888;">Sand Att<input type="number" id="g-sand-att" inputmode="numeric" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
-      <label style="font-size:10px;color:#888;">Sand Saves<input type="number" id="g-sand-made" inputmode="numeric" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;"></label>
+    <div style="background:#f8f8f6;border-radius:8px;padding:6px;margin-bottom:6px;overflow-x:auto;">
+      <table id="hole-grid" style="width:100%;font-size:11px;border-collapse:collapse;">
+        <thead>
+          <tr style="color:#888;font-weight:500;">
+            <th style="padding:2px 1px;text-align:center;width:22px;">#</th>
+            <th style="padding:2px 1px;text-align:center;width:22px;">Par</th>
+            <th style="padding:2px 1px;text-align:center;">Score</th>
+            <th style="padding:2px 1px;text-align:center;">Putts</th>
+            <th style="padding:2px 1px;text-align:center;">FW</th>
+            <th style="padding:2px 1px;text-align:center;">U&D</th>
+            <th style="padding:2px 1px;text-align:center;">Sand</th>
+            <th style="padding:2px 1px;text-align:center;width:30px;">DC</th>
+            <th style="padding:2px 1px;text-align:center;width:30px;">Pen</th>
+          </tr>
+        </thead>
+        <tbody id="hole-grid-body"></tbody>
+      </table>
     </div>
     <label style="font-size:10px;color:#888;display:block;margin-bottom:6px;">Notes<textarea id="g-notes" rows="2" style="width:100%;font-size:12px;padding:5px;border:0.5px solid #ddd;border-radius:6px;margin-top:2px;font-family:inherit;resize:vertical;"></textarea></label>
     <button class="day-btn" style="width:100%;background:#1D9E75;color:#fff;border-color:#1D9E75;" onclick="submitGolfLogger()">Save round</button>
@@ -1579,6 +1573,171 @@ function showGymChart(type, btn) {
 
 // --- Golf round logger ---
 let golfLoggerInited = false;
+// Courses cache: array of {course, tees, pars: [18 numbers], par, rating, slope}
+let coursesCache = [];
+
+async function fetchCourses() {
+  try {
+    const rows = await fetch(SHEETS_URL + '&sheet=Courses').then(r => r.json());
+    coursesCache = (rows || []).map(r => ({
+      course: r.Course || '',
+      tees: r.Tees || '',
+      pars: Array.from({length: 18}, (_, i) => Number(r['H' + (i+1)]) || 0),
+      par: Number(r.Par) || 0,
+      rating: Number(r.Rating) || 0,
+      slope: Number(r.Slope) || 0
+    })).filter(c => c.course);
+  } catch(e) { coursesCache = []; }
+}
+
+function populateCourseDatalists() {
+  const courseDl = document.getElementById('g-course-dl');
+  const teesDl = document.getElementById('g-tees-dl');
+  if (!courseDl || !teesDl) return;
+  const uniqueCourses = Array.from(new Set(coursesCache.map(c => c.course)));
+  courseDl.innerHTML = uniqueCourses.map(c => `<option value="${c}"></option>`).join('');
+  refreshTeesDatalist();
+}
+
+function refreshTeesDatalist() {
+  const teesDl = document.getElementById('g-tees-dl');
+  if (!teesDl) return;
+  const course = document.getElementById('g-course').value.trim();
+  const matchingTees = Array.from(new Set(
+    coursesCache.filter(c => c.course === course).map(c => c.tees).filter(Boolean)
+  ));
+  teesDl.innerHTML = matchingTees.map(t => `<option value="${t}"></option>`).join('');
+}
+
+function findCourseEntry(course, tees) {
+  const c = course.trim();
+  const t = (tees || '').trim();
+  return coursesCache.find(x => x.course === c && x.tees === t)
+      || coursesCache.find(x => x.course === c);  // fallback to any tee for that course
+}
+
+function buildHoleGrid() {
+  const tbody = document.getElementById('hole-grid-body');
+  if (!tbody) return;
+  let html = '';
+  for (let i = 1; i <= 18; i++) {
+    html += `
+      <tr data-hole="${i}">
+        <td style="text-align:center;color:#888;padding:2px 1px;">${i}</td>
+        <td class="h-par-cell" style="text-align:center;color:#888;padding:2px 1px;"><input type="number" class="h-par" inputmode="numeric" style="width:100%;font-size:11px;padding:2px;border:0.5px solid #eee;border-radius:4px;text-align:center;background:#fafaf8;color:#888;"></td>
+        <td><input type="number" class="h-score" inputmode="numeric" style="width:100%;font-size:11px;padding:3px;border:0.5px solid #ddd;border-radius:4px;text-align:center;"></td>
+        <td><input type="number" class="h-putts" inputmode="numeric" style="width:100%;font-size:11px;padding:3px;border:0.5px solid #ddd;border-radius:4px;text-align:center;"></td>
+        <td><select class="h-fw" style="width:100%;font-size:11px;padding:2px 0;border:0.5px solid #ddd;border-radius:4px;background:#fff;text-align:center;">
+          <option value="-">-</option>
+          <option value="H">H</option>
+          <option value="L">L</option>
+          <option value="R">R</option>
+          <option value="S">S</option>
+          <option value="Lo">Lo</option>
+        </select></td>
+        <td><button type="button" class="h-ud cycle-btn" data-state="-" onclick="cycleUD(this)" style="width:100%;font-size:11px;padding:3px 0;border:0.5px solid #ddd;border-radius:4px;background:#fff;color:#888;cursor:pointer;font-weight:500;">-</button></td>
+        <td><button type="button" class="h-sand cycle-btn" data-state="-" onclick="cycleSand(this)" style="width:100%;font-size:11px;padding:3px 0;border:0.5px solid #ddd;border-radius:4px;background:#fff;color:#888;cursor:pointer;font-weight:500;">-</button></td>
+        <td><input type="number" class="h-dc" inputmode="numeric" placeholder="0" style="width:100%;font-size:11px;padding:3px;border:0.5px solid #ddd;border-radius:4px;text-align:center;"></td>
+        <td><input type="number" class="h-pen" inputmode="numeric" placeholder="0" style="width:100%;font-size:11px;padding:3px;border:0.5px solid #ddd;border-radius:4px;text-align:center;"></td>
+      </tr>
+    `;
+  }
+  tbody.innerHTML = html;
+  // Wire live-total updates
+  tbody.addEventListener('input', updateGolfTotals);
+  tbody.addEventListener('change', updateGolfTotals);
+  tbody.addEventListener('click', (e) => {
+    if (e.target.classList.contains('cycle-btn')) updateGolfTotals();
+  });
+}
+
+const UD_STATES = ['-', 'Att', 'Made'];
+const SAND_STATES = ['-', 'Att', 'Save'];
+const CYCLE_COLORS = {
+  '-':    {bg:'#fff', fg:'#888', border:'#ddd'},
+  'Att':  {bg:'#fdf6ef', fg:'#5c3d0b', border:'#f0e4d2'},
+  'Made': {bg:'#e7f5ee', fg:'#1D9E75', border:'#bfe2cf'},
+  'Save': {bg:'#e7f5ee', fg:'#1D9E75', border:'#bfe2cf'}
+};
+function cycleBtn(btn, states) {
+  const cur = btn.dataset.state || states[0];
+  const next = states[(states.indexOf(cur) + 1) % states.length];
+  btn.dataset.state = next;
+  btn.textContent = next;
+  const c = CYCLE_COLORS[next] || CYCLE_COLORS['-'];
+  btn.style.background = c.bg;
+  btn.style.color = c.fg;
+  btn.style.borderColor = c.border;
+}
+function cycleUD(btn)   { cycleBtn(btn, UD_STATES); }
+function cycleSand(btn) { cycleBtn(btn, SAND_STATES); }
+
+// Auto-fill par cells from the Courses sheet entry for the selected course/tees.
+function fillParsFromCourse() {
+  const course = document.getElementById('g-course').value.trim();
+  const tees = document.getElementById('g-tees').value.trim();
+  const entry = findCourseEntry(course, tees);
+  const parInputs = document.querySelectorAll('#hole-grid-body .h-par');
+  parInputs.forEach((inp, i) => {
+    const par = entry && entry.pars[i];
+    if (par) {
+      inp.value = par;
+    } else if (!inp.value) {
+      // leave blank if no entry — user fills manually
+    }
+  });
+  updateGolfTotals();
+}
+
+function readHoleRows() {
+  const rows = [];
+  document.querySelectorAll('#hole-grid-body tr').forEach((tr, i) => {
+    rows.push({
+      hole: i + 1,
+      par:    Number(tr.querySelector('.h-par').value) || 0,
+      score:  Number(tr.querySelector('.h-score').value) || 0,
+      putts:  Number(tr.querySelector('.h-putts').value) || 0,
+      fw:     tr.querySelector('.h-fw').value || '-',
+      ud:     tr.querySelector('.h-ud').dataset.state || '-',
+      sand:   tr.querySelector('.h-sand').dataset.state || '-',
+      dblChip: Number(tr.querySelector('.h-dc').value) || 0,
+      pen:     Number(tr.querySelector('.h-pen').value) || 0
+    });
+  });
+  return rows;
+}
+
+function computeRoundTotals(holes) {
+  let score=0, putts=0, threePutts=0, gir=0;
+  let fwHit=0, fwLeft=0, fwRight=0, fwShort=0, fwLong=0;
+  let udAtt=0, udMade=0, sandAtt=0, sandMade=0, penalties=0;
+  for (const h of holes) {
+    score += h.score;
+    putts += h.putts;
+    if (h.putts >= 3) threePutts++;
+    if (h.score > 0 && (h.score - h.putts) <= (h.par - 2)) gir++;
+    if (h.fw === 'H')  fwHit++;
+    else if (h.fw === 'L')  fwLeft++;
+    else if (h.fw === 'R')  fwRight++;
+    else if (h.fw === 'S')  fwShort++;
+    else if (h.fw === 'Lo') fwLong++;
+    if (h.ud === 'Att')  udAtt++;
+    if (h.ud === 'Made') { udAtt++; udMade++; }
+    if (h.sand === 'Att')  sandAtt++;
+    if (h.sand === 'Save') { sandAtt++; sandMade++; }
+    penalties += h.pen;
+  }
+  return {score, putts, threePutts, gir, fwHit, fwLeft, fwRight, fwShort, fwLong,
+          udAtt, udMade, sandAtt, sandMade, penalties};
+}
+
+function updateGolfTotals() {
+  const t = computeRoundTotals(readHoleRows());
+  const el = document.getElementById('g-live-totals');
+  if (!el) return;
+  el.textContent = 'Score ' + (t.score || '-') + ' · Putts ' + (t.putts || '-') + ' · GIR ' + t.gir + '/18';
+}
+
 function toggleGolfLogger() {
   const body = document.getElementById('golf-logger-body');
   const btn = document.getElementById('golf-logger-toggle-btn');
@@ -1587,6 +1746,18 @@ function toggleGolfLogger() {
     btn.textContent = 'Close';
     if (!golfLoggerInited) {
       document.getElementById('g-date').value = new Date().toISOString().split('T')[0];
+      buildHoleGrid();
+      // course typing should refresh tees + pars
+      document.getElementById('g-course').addEventListener('input', () => {
+        refreshTeesDatalist();
+        fillParsFromCourse();
+      });
+      document.getElementById('g-tees').addEventListener('input', fillParsFromCourse);
+      // load courses then fill pars (course defaults to Pitt Meadows)
+      fetchCourses().then(() => {
+        populateCourseDatalists();
+        fillParsFromCourse();
+      });
       golfLoggerInited = true;
     }
   } else {
@@ -1595,37 +1766,36 @@ function toggleGolfLogger() {
   }
 }
 
-function numOrEmpty(id) {
-  const v = document.getElementById(id).value;
-  return v === '' ? '' : Number(v);
-}
-
 async function submitGolfLogger() {
   const status = document.getElementById('golf-logger-status');
+  const date = document.getElementById('g-date').value;
+  const course = document.getElementById('g-course').value.trim();
+  const tees = document.getElementById('g-tees').value.trim();
+  const notes = document.getElementById('g-notes').value.trim();
+  if (!date) { status.textContent = 'Pick a date'; status.style.color = '#E24B4A'; return; }
+  const holes = readHoleRows();
+  const validHoles = holes.filter(h => h.score > 0);
+  if (!validHoles.length) { status.textContent = 'Enter at least one hole'; status.style.color = '#E24B4A'; return; }
+  const totals = computeRoundTotals(holes);
   const payload = {
     key: 'bdv-8f3k-2026',
     action: 'logRound',
-    date:    document.getElementById('g-date').value,
-    course:  document.getElementById('g-course').value.trim(),
-    tees:    document.getElementById('g-tees').value,
-    score:   numOrEmpty('g-score'),
-    fwHit:   numOrEmpty('g-fw-hit'),
-    fwLeft:  numOrEmpty('g-fw-left'),
-    fwRight: numOrEmpty('g-fw-right'),
-    fwShort: numOrEmpty('g-fw-short'),
-    fwLong:  numOrEmpty('g-fw-long'),
-    gir:     numOrEmpty('g-gir'),
-    putts:   numOrEmpty('g-putts'),
-    penalties: numOrEmpty('g-pen'),
-    threePutts: numOrEmpty('g-3p'),
-    udAtt:   numOrEmpty('g-ud-att'),
-    udMade:  numOrEmpty('g-ud-made'),
-    sandAtt: numOrEmpty('g-sand-att'),
-    sandMade:numOrEmpty('g-sand-made'),
-    notes:   document.getElementById('g-notes').value.trim()
+    date, course, tees, notes, holes,
+    score: totals.score,
+    fwHit: totals.fwHit,
+    fwLeft: totals.fwLeft,
+    fwRight: totals.fwRight,
+    fwShort: totals.fwShort,
+    fwLong: totals.fwLong,
+    gir: totals.gir,
+    putts: totals.putts,
+    penalties: totals.penalties,
+    threePutts: totals.threePutts,
+    udAtt: totals.udAtt,
+    udMade: totals.udMade,
+    sandAtt: totals.sandAtt,
+    sandMade: totals.sandMade
   };
-  if (!payload.date) { status.textContent = 'Pick a date'; status.style.color = '#E24B4A'; return; }
-  if (payload.score === '') { status.textContent = 'Enter a score'; status.style.color = '#E24B4A'; return; }
   status.textContent = 'Saving...'; status.style.color = '#888';
   try {
     const res = await fetch(SHEETS_URL.split('?')[0], {
@@ -1635,7 +1805,8 @@ async function submitGolfLogger() {
     });
     const data = await res.json();
     if (data.ok) {
-      status.textContent = 'Saved. Refresh Golf tab to see.'; status.style.color = '#1D9E75';
+      status.textContent = 'Saved ' + totals.score + ' (' + totals.putts + ' putts, ' + totals.gir + ' GIR). Refresh Golf tab.';
+      status.style.color = '#1D9E75';
     } else {
       status.textContent = 'Error: ' + data.error; status.style.color = '#E24B4A';
     }

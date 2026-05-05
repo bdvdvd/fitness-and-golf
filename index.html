@@ -1610,10 +1610,28 @@ function refreshTeesDatalist() {
 }
 
 function findCourseEntry(course, tees) {
-  const c = course.trim();
-  const t = (tees || '').trim();
-  return coursesCache.find(x => x.course === c && x.tees === t)
-      || coursesCache.find(x => x.course === c);  // fallback to any tee for that course
+  const c = (course || '').trim().toLowerCase();
+  const t = (tees  || '').trim().toLowerCase();
+  return coursesCache.find(x => x.course.trim().toLowerCase() === c && x.tees.trim().toLowerCase() === t)
+      || coursesCache.find(x => x.course.trim().toLowerCase() === c);  // fallback to any tee for that course
+}
+
+// Auto-pick tees if the Courses sheet has exactly one tees entry for this course.
+function autoPickTees() {
+  const course = document.getElementById('g-course').value.trim().toLowerCase();
+  const matches = Array.from(new Set(
+    coursesCache.filter(c => c.course.trim().toLowerCase() === course).map(c => c.tees).filter(Boolean)
+  ));
+  const teesEl = document.getElementById('g-tees');
+  if (matches.length === 1) {
+    teesEl.value = matches[0];
+  } else if (matches.length > 1) {
+    // Only override the default placeholder ("White") if the user hasn't typed a custom value
+    const cur = teesEl.value.trim().toLowerCase();
+    if (!matches.some(m => m.toLowerCase() === cur)) {
+      teesEl.value = matches[0];
+    }
+  }
 }
 
 function buildHoleGrid() {
@@ -1750,12 +1768,14 @@ function toggleGolfLogger() {
       // course typing should refresh tees + pars
       document.getElementById('g-course').addEventListener('input', () => {
         refreshTeesDatalist();
+        autoPickTees();
         fillParsFromCourse();
       });
       document.getElementById('g-tees').addEventListener('input', fillParsFromCourse);
       // load courses then fill pars (course defaults to Pitt Meadows)
       fetchCourses().then(() => {
         populateCourseDatalists();
+        autoPickTees();
         fillParsFromCourse();
       });
       golfLoggerInited = true;

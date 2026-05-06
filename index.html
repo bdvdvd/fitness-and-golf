@@ -268,6 +268,14 @@ body { overscroll-behavior-y: contain; }
   <div class="mc"><div class="mc-label">Latest practice</div><div class="mc-val" id="home-practice-val"><span class="sk sk-val"></span></div><div class="mc-sub" id="home-practice-sub"><span class="sk sk-sub"></span></div></div>
 </div>
 
+<div class="goals-box" id="home-focus" style="display:none;">
+  <h3 style="display:flex;justify-content:space-between;align-items:center;">
+    <span>Focus this week</span>
+    <span id="home-focus-sub" style="font-size:10px;color:#888;font-weight:400;"></span>
+  </h3>
+  <div id="home-focus-body"></div>
+</div>
+
 <div class="legend" id="home-legend"></div>
 <div class="chart-wrap"><canvas id="home-chart" role="img" aria-label="Weekly training load"></canvas></div>
 
@@ -2811,7 +2819,81 @@ function tryRenderHome() {
   }
   if (homeState.runs && homeState.gym) renderHomeChart();
   renderHomeGoals();
+  renderHomeFocus();
   renderHomeFeed();
+}
+
+// Drill recommendations per strokes-gained category. Used by the Home "Focus this week" card.
+const FOCUS_DRILLS = {
+  'Driving': [
+    'Range tee shots: 30 balls, focus on dispersion (not distance)',
+    'Alignment work: pick a target line on every shot',
+    'On course: take 1 club less off the tee on tight holes'
+  ],
+  'Approach': [
+    'Range mid/long irons: 30 balls to specific targets',
+    'Yardage book: know your carry distance for every club',
+    'On course: aim for the fat side of the green, accept par'
+  ],
+  'Short game': [
+    '50 chips from 20 to 30 yards: clean strikes, no double chips',
+    '20 sand shots from greenside bunkers',
+    'Practice 3 different chip styles (flop, bump-and-run, standard) from the same lie'
+  ],
+  'Putting': [
+    'Lag putting: 10 putts from 30+ ft, focus on speed',
+    '3-foot circle drill: 10 in a row from 3 ft',
+    'Read every putt before stepping in; commit to a line'
+  ]
+};
+
+// Identify the worst SG category over the last 30 days based on per-hole data.
+function getTopGolfFocus() {
+  // Use a fixed 30-day window so the Home card stays consistent regardless of
+  // the period filter on the Golf tab.
+  const cutoff = new Date(); cutoff.setHours(0,0,0,0);
+  cutoff.setDate(cutoff.getDate() - 30);
+  const periodHoles = (allHoles || []).filter(h => h.rawDate >= cutoff);
+  if (!periodHoles.length) return null;
+  const m = computeBreakdownFromHoles(periodHoles);
+  if (!m) return null;
+  const baseline = (typeof currentBaseline === 'function') ? currentBaseline() : null;
+  if (!baseline) return null;
+  const lost = estimateStrokesLost(m, baseline);
+  const cats = [
+    {name: 'Driving',    loss: lost.driving},
+    {name: 'Approach',   loss: lost.approach},
+    {name: 'Short game', loss: lost.shortGame},
+    {name: 'Putting',    loss: lost.putting}
+  ];
+  cats.sort((a, b) => b.loss - a.loss);
+  const worst = cats[0];
+  if (worst.loss < 0.3) return null; // already at or near baseline
+  const targetHcp = (typeof currentTargetHcp === 'function') ? currentTargetHcp() : 7;
+  return {category: worst.name, loss: worst.loss, nRounds: m.nRounds, targetHcp};
+}
+
+function renderHomeFocus() {
+  const box = document.getElementById('home-focus');
+  const body = document.getElementById('home-focus-body');
+  const sub = document.getElementById('home-focus-sub');
+  if (!box || !body) return;
+  const f = getTopGolfFocus();
+  if (!f) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  sub.textContent = 'last 30d · ' + f.nRounds + ' round' + (f.nRounds === 1 ? '' : 's');
+  const drills = FOCUS_DRILLS[f.category] || [];
+  body.innerHTML = `
+    <div style="font-size:13px;color:#5c3d0b;margin-bottom:8px;line-height:1.4;">
+      <strong>${f.category}</strong> is your biggest leak: losing
+      <strong style="color:#E24B4A;">${f.loss.toFixed(1)} strokes/rd</strong>
+      vs your ${f.targetHcp}-handicap target.
+    </div>
+    <div style="font-size:11px;color:#888;margin-bottom:4px;">Try this week:</div>
+    <ul style="font-size:12px;color:#444;margin:0;padding-left:18px;line-height:1.5;">
+      ${drills.map(d => `<li>${d}</li>`).join('')}
+    </ul>
+  `;
 }
 
 function renderHomeFeed() {
@@ -3019,6 +3101,8 @@ function renderSettings() {
   // Strokes-gained breakdown depends on golfTargetHandicap; re-render so the
   // baseline labels and computed values reflect the latest setting.
   if (typeof renderGolfBreakdown === 'function') renderGolfBreakdown();
+  // Same for the Home "Focus this week" card.
+  if (typeof renderHomeFocus === 'function') renderHomeFocus();
 }
 
 function openSettingsModal() {

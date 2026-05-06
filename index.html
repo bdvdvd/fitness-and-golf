@@ -1496,6 +1496,7 @@ function formatSets(sets) {
 }
 
 let gymPRs = [];
+let gymPRRepsByWeight = {}; // {liftName: {weight: bestReps}} — for rep PR detection
 let gymVolume = [];
 let gymSessionsByWeek = [];
 let gymRecent = [];
@@ -1553,6 +1554,7 @@ async function loadGym(preFetched) {
 
   const byDate = {};
   const prs = {};
+  const prRepsByWeight = {}; // {liftName: {weight: bestReps}}
   const vol = {Chest:0, Back:0, Legs:0, Shoulders:0, Arms:0, Core:0};
 
   const unmapped = new Set();
@@ -1596,6 +1598,11 @@ async function loadGym(preFetched) {
           if (!prs[p.name] || weight > prs[p.name].weight) {
             prs[p.name] = {weight, reps, dateStr};
           }
+          // Track best reps at each (lift, weight) tier — used for rep PR detection.
+          if (!prRepsByWeight[p.name]) prRepsByWeight[p.name] = {};
+          if (!prRepsByWeight[p.name][weight] || reps > prRepsByWeight[p.name][weight]) {
+            prRepsByWeight[p.name][weight] = reps;
+          }
         }
       });
     }
@@ -1631,6 +1638,7 @@ async function loadGym(preFetched) {
     const val = name === 'Weighted Pull-Up' ? '+' + pr.weight : pr.weight;
     return {lift: name, val, sub: pr.reps + ' x ' + pr.weight + ' · ' + lbl, weight: pr.weight};
   });
+  gymPRRepsByWeight = prRepsByWeight; // expose for PR celebration detection
 
   allGymByDate = byDate;
   allGymSorted = sorted.slice();
@@ -2501,7 +2509,7 @@ function loadLoggerDay(day, btn) {
 }
 
 // Compare a freshly-submitted exercises array against the existing gymPRs and
-// return any PRs that were beaten. Each result: {lift, weight, reps}.
+// return any PRs that were beaten. Each result: {type: 'weight'|'reps', lift, weight, reps, prevReps?}.
 function detectNewPRs(exercises) {
   if (!exercises || !exercises.length || !gymPRs || !gymPRs.length || !muscleMap) return [];
   const out = [];
@@ -2510,21 +2518,36 @@ function detectNewPRs(exercises) {
     const m = muscleMap[ex.name] || muscleMap[cleanName];
     if (!m) continue;
     for (const matcher of PR_MATCHERS) {
-      let bestWt = 0, bestReps = 0;
+      const existingPR = gymPRs.find(p => p.lift === matcher.name);
+      const existingWt = (existingPR && Number(existingPR.weight)) || 0;
+      const repTiers = (gymPRRepsByWeight && gymPRRepsByWeight[matcher.name]) || {};
+
+      let bestWt = 0, bestRepsAtBestWt = 0;
+      const repPRsAtKnownWeights = {}; // weight -> {reps, prevReps}
       for (const set of (ex.sets || [])) {
         const w = Number(set.weight);
         const r = Number(set.reps);
         if (isNaN(w) || isNaN(r) || !r) continue;
-        if (matcher.match(m.canonical, w) && w > bestWt) {
-          bestWt = w; bestReps = r;
+        if (!matcher.match(m.canonical, w)) continue;
+        if (w > bestWt) { bestWt = w; bestRepsAtBestWt = r; }
+        // Rep PR: we've previously logged this exact weight, and now we beat the rep count.
+        const prevReps = repTiers[w] || 0;
+        if (prevReps > 0 && r > prevReps && w <= existingWt) {
+          // Track best rep PR per weight tier in this submission.
+          if (!repPRsAtKnownWeights[w] || r > repPRsAtKnownWeights[w].reps) {
+            repPRsAtKnownWeights[w] = {reps: r, prevReps};
+          }
         }
       }
-      if (!bestWt) continue;
-      const existing = gymPRs.find(p => p.lift === matcher.name);
-      const existingWt = (existing && Number(existing.weight)) || 0;
+      // Weight PR: heaviest set in submission beats existing all-time max.
       if (bestWt > existingWt) {
-        out.push({lift: matcher.name, weight: bestWt, reps: bestReps});
+        out.push({type: 'weight', lift: matcher.name, weight: bestWt, reps: bestRepsAtBestWt});
       }
+      // Rep PRs (only at weights we've already seen, so first-time-at-weight isn't spammed)
+      Object.keys(repPRsAtKnownWeights).forEach(w => {
+        const info = repPRsAtKnownWeights[w];
+        out.push({type: 'reps', lift: matcher.name, weight: Number(w), reps: info.reps, prevReps: info.prevReps});
+      });
     }
   }
   return out;
@@ -2713,7 +2736,12 @@ async function submitLogger() {
     if (data.ok) {
       const newPRs = detectNewPRs(rows);
       if (newPRs.length) {
-        const prTxt = newPRs.map(p => p.lift + ' ' + p.weight + ' lbs').join(' · ');
+        const prTxt = newPRs.map(p => {
+          if (p.type === 'reps') {
+            return p.lift + ' ' + p.reps + ' reps @ ' + p.weight + ' lbs (was ' + p.prevReps + ')';
+          }
+          return p.lift + ' ' + p.weight + ' lbs';
+        }).join(' · ');
         status.textContent = '🎉 New PR! ' + prTxt;
       } else {
         status.textContent = 'Saved ' + data.added + ' rows. Refresh Gym tab to see.';

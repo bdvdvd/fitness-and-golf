@@ -3015,6 +3015,10 @@ function renderSettings() {
 
   // Gym
   set('gym-subtitle', s.gymGoal);
+
+  // Strokes-gained breakdown depends on golfTargetHandicap; re-render so the
+  // baseline labels and computed values reflect the latest setting.
+  if (typeof renderGolfBreakdown === 'function') renderGolfBreakdown();
 }
 
 function openSettingsModal() {

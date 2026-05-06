@@ -2185,6 +2185,14 @@ function togglePracticeLogger() {
   }
 }
 
+// Reads a numeric input by id, returning '' for blank or Number(value) otherwise.
+function numOrEmpty(id) {
+  const el = document.getElementById(id);
+  if (!el) return '';
+  const v = el.value;
+  return v === '' ? '' : Number(v);
+}
+
 async function submitPracticeLogger() {
   const status = document.getElementById('practice-logger-status');
   const focus = Array.from(document.querySelectorAll('#p-focus-wrap .focus-btn.active')).map(b => b.dataset.focus).join(', ');

@@ -166,6 +166,25 @@ body { overscroll-behavior-y: contain; }
 .gym-row:hover td { background: #fafaf8; }
 .gym-row td:first-child::before { content: '▸ '; color: var(--gym); font-size: 9px; }
 .gym-row.open td:first-child::before { content: '▾ '; }
+.golf-row:hover td { background: #fafaf8; }
+.golf-row td:first-child::before { content: '▸ '; color: var(--golf); font-size: 9px; }
+.golf-row.open td:first-child::before { content: '▾ '; }
+.golf-detail-grid { display: grid; grid-template-columns: 32px repeat(9, 1fr); gap: 2px; margin-bottom: 4px; }
+.golf-detail-row-label { font-size: 9px; color: var(--golf-ink); font-weight: 600; align-self: center; text-align: right; padding-right: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+.golf-hole-cell { background: #fff; border-radius: 4px; padding: 3px 1px; text-align: center; line-height: 1.15; border: 0.5px solid #e6efe9; }
+.golf-hole-cell .hh { font-size: 8px; color: #999; }
+.golf-hole-cell .hp { font-size: 8px; color: #b0b0b0; }
+.golf-hole-cell .hs { font-size: 13px; font-weight: 600; color: #333; }
+.golf-hole-cell .hpu { font-size: 8px; color: #999; }
+.golf-hole-cell.eagle      .hs { color: #1D9E75; }
+.golf-hole-cell.birdie     .hs { color: #3FB587; }
+.golf-hole-cell.bogey      .hs { color: #E8A53A; }
+.golf-hole-cell.double     .hs { color: #E2754B; }
+.golf-hole-cell.triplePlus .hs { color: #E24B4A; }
+.golf-hole-cell.empty      { background: #f4f7f5; border-color: #e6efe9; }
+.golf-hole-cell.empty .hs  { color: #ccc; }
+.golf-detail-totals { display: flex; flex-wrap: wrap; gap: 10px 14px; font-size: 11px; color: var(--golf-ink); padding: 6px 4px 0; }
+.golf-detail-totals span strong { color: #333; font-weight: 600; }
 .gym-badges { margin-top: 3px; display: flex; flex-wrap: wrap; gap: 4px; }
 .gym-badge { font-size: 9px; color: var(--gym-ink); background: var(--gym-wash); padding: 1px 6px; border-radius: 8px; font-weight: 500; border: 0.5px solid #f0e4d2; }
 
@@ -1439,6 +1458,45 @@ function renderGolfDistribution() {
   }).join('');
 }
 
+function diffClass(diff) {
+  if (diff <= -2) return 'eagle';
+  if (diff === -1) return 'birdie';
+  if (diff === 0)  return 'par';
+  if (diff === 1)  return 'bogey';
+  if (diff === 2)  return 'double';
+  return 'triplePlus';
+}
+function renderHoleDetail(holes) {
+  if (!holes || !holes.length) {
+    return `<div style="padding:8px 4px;font-size:11px;color:#888;">Per-hole detail not logged for this round.</div>`;
+  }
+  const byHole = {};
+  holes.forEach(h => { byHole[h.hole] = h; });
+  const cell = (n) => {
+    const h = byHole[n];
+    if (!h || !h.score) {
+      return `<div class="golf-hole-cell empty"><div class="hh">${n}</div><div class="hp">·</div><div class="hs">-</div><div class="hpu"> </div></div>`;
+    }
+    const cls = h.par ? diffClass(h.score - h.par) : '';
+    const putts = h.putts ? h.putts + 'p' : ' ';
+    return `<div class="golf-hole-cell ${cls}"><div class="hh">${n}</div><div class="hp">P${h.par || '-'}</div><div class="hs">${h.score}</div><div class="hpu">${putts}</div></div>`;
+  };
+  const range = (a, b) => { const out = []; for (let i = a; i <= b; i++) out.push(i); return out; };
+  const sumRange = (a, b, key) => range(a, b).reduce((s, n) => s + ((byHole[n] && byHole[n][key]) || 0), 0);
+  const front = range(1, 9).map(cell).join('');
+  const back  = range(10, 18).map(cell).join('');
+  const fScore = sumRange(1, 9, 'score'),  fPar = sumRange(1, 9, 'par'),  fPutts = sumRange(1, 9, 'putts');
+  const bScore = sumRange(10, 18, 'score'), bPar = sumRange(10, 18, 'par'), bPutts = sumRange(10, 18, 'putts');
+  const fmtRel = (s, p) => (s && p) ? (s - p === 0 ? 'E' : (s - p > 0 ? '+' + (s - p) : (s - p))) : '';
+  return `
+    <div class="golf-detail-grid"><div class="golf-detail-row-label">Front</div>${front}</div>
+    <div class="golf-detail-grid"><div class="golf-detail-row-label">Back</div>${back}</div>
+    <div class="golf-detail-totals">
+      <span>Front <strong>${fScore || '-'}</strong> ${fmtRel(fScore, fPar) ? '(' + fmtRel(fScore, fPar) + ')' : ''} · ${fPutts || 0}p</span>
+      <span>Back <strong>${bScore || '-'}</strong> ${fmtRel(bScore, bPar) ? '(' + fmtRel(bScore, bPar) + ')' : ''} · ${bPutts || 0}p</span>
+      <span>Total <strong>${(fScore + bScore) || '-'}</strong> ${fmtRel(fScore + bScore, fPar + bPar) ? '(' + fmtRel(fScore + bScore, fPar + bPar) + ')' : ''} · ${fPutts + bPutts}p</span>
+    </div>`;
+}
 function renderGolfTable() {
   const golfTbody = document.getElementById('golf-tbody');
   golfTbody.innerHTML = '';
@@ -1448,21 +1506,38 @@ function renderGolfTable() {
       : emptyRow(8, 'No rounds logged yet', 'Log your first round above to get started');
     return;
   }
-  [...rounds].reverse().forEach(r => {
-    const tr = document.createElement('tr');
+  const holesByRound = {};
+  (allHoles || []).forEach(h => {
+    const k = (h.rawDate ? h.rawDate.toISOString().split('T')[0] : '') + '|' + shortCourse(h.course);
+    if (!holesByRound[k]) holesByRound[k] = [];
+    holesByRound[k].push(h);
+  });
+  const ordered = [...rounds].reverse();
+  golfTbody.innerHTML = ordered.map((r, i) => {
     const firPct = r.fairway !== null ? Math.round(r.fairway / 14 * 100) + '%' : '';
     const girPct = r.gir !== null ? Math.round(r.gir / 18 * 100) + '%' : '';
-    tr.innerHTML = `
-      <td>${r.date}</td>
-      <td>${r.course}</td>
-      <td><span class="badge" style="background:${r.tees==='Black'?'#1a1a1a22':'#378ADD22'};color:${r.tees==='Black'?'#1a1a1a':'#378ADD'};">${r.tees}</span></td>
-      <td style="font-weight:500;">${r.score}</td>
-      <td>${r.fairway !== null ? r.fairway + ' (' + firPct + ')' : ''}</td>
-      <td>${r.gir !== null ? r.gir + ' (' + girPct + ')' : ''}</td>
-      <td>${r.putts !== null ? r.putts : ''}</td>
-      <td style="color:#888;">${r.notes}</td>`;
-    golfTbody.appendChild(tr);
-  });
+    const k = (r.rawDate ? r.rawDate.toISOString().split('T')[0] : '') + '|' + r.course;
+    const detail = renderHoleDetail(holesByRound[k]);
+    return `<tr class="golf-row" onclick="toggleGolfDetail(${i})" style="cursor:pointer;">
+        <td>${r.date}</td>
+        <td>${r.course}</td>
+        <td><span class="badge" style="background:${r.tees==='Black'?'#1a1a1a22':'#378ADD22'};color:${r.tees==='Black'?'#1a1a1a':'#378ADD'};">${r.tees}</span></td>
+        <td style="font-weight:500;">${r.score}</td>
+        <td>${r.fairway !== null ? r.fairway + ' (' + firPct + ')' : ''}</td>
+        <td>${r.gir !== null ? r.gir + ' (' + girPct + ')' : ''}</td>
+        <td>${r.putts !== null ? r.putts : ''}</td>
+        <td style="color:#888;">${r.notes}</td>
+      </tr>
+      <tr id="golf-detail-${i}" style="display:none;"><td colspan="8" style="background:var(--golf-wash);padding:8px 12px;">${detail}</td></tr>`;
+  }).join('');
+}
+function toggleGolfDetail(i) {
+  const row = document.getElementById('golf-detail-' + i);
+  if (!row) return;
+  const open = row.style.display === 'none';
+  row.style.display = open ? 'table-row' : 'none';
+  const trigger = row.previousElementSibling;
+  if (trigger) trigger.classList.toggle('open', open);
 }
 
 let golfChart;

@@ -12012,6 +12012,24 @@
       "Balls Hit": "",
       "Drills": "",
       "Notes": "Quick range session inside Gilmore Place simulator worked on 60 7080 yard shots with the wedges and then also some 96 and three iron swings"
+    },
+    {
+      "Date": "2026-05-05T07:00:00.000Z",
+      "Location": "Range",
+      "Duration": 30,
+      "Focus": "Chipping, Bunker",
+      "Balls Hit": "",
+      "Drills": "40 chips 10-25 yards. 5 bunker swings.",
+      "Notes": "Focus on rotating chest with ball centre and back of stance. Feeling of balancing sand and throwing behind back in bunker felt good."
+    },
+    {
+      "Date": "2026-05-05T07:00:00.000Z",
+      "Location": "Range",
+      "Duration": 40,
+      "Focus": "Driver, Irons, Wedges",
+      "Balls Hit": 46,
+      "Drills": "",
+      "Notes": "Went through the full bag at Burnaby Mountain range. Solid session, 8/10. Felt controlled and tried to keep the ball more in centre of stance for wedges"
     }
   ],
   "Settings": [
@@ -12037,7 +12055,7 @@
     },
     {
       "Key": "practiceTargetHours",
-      "Value": 180
+      "Value": 3
     },
     {
       "Key": "gymGoal",

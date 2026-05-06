@@ -3202,6 +3202,8 @@ function renderSettings() {
   if (s.golfTargetGIR) set('golf-target-gir', s.golfTargetGIR + '%');
   if (s.golfTargetPutts) set('golf-target-putts', '≤ ' + s.golfTargetPutts);
   if (s.golfTarget3Putts) set('golf-target-3putts', '≤ ' + s.golfTarget3Putts + '/rd');
+  // Golf section handicap tile (also set in renderGolfHeader; this covers settings-loads-after-golf race)
+  if (s.golfHandicap) set('golf-handicap', s.golfHandicap);
   // Home Golf handicap tile
   const hcpEl = document.getElementById('home-golf-hcp');
   if (hcpEl) hcpEl.textContent = s.golfHandicap || '—';

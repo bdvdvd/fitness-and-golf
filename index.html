@@ -484,6 +484,18 @@ body { overscroll-behavior-y: contain; }
   <div id="golf-distribution-rows"></div>
 </div>
 
+<div class="workout-box" id="golf-practice-impact-box" style="display:none;">
+  <h3 style="display:flex;justify-content:space-between;align-items:center;">
+    <span>Practice impact</span>
+    <span id="golf-practice-impact-sub" style="font-size:10px;color:#888;font-weight:400;"></span>
+  </h3>
+  <div id="golf-practice-impact-body"></div>
+  <div style="font-size:10px;color:var(--soft);margin-top:6px;line-height:1.4;">
+    Compares scoring average for rounds played within 14 days of a practice session vs. rounds without recent practice.
+    Correlational, not causal. Sample size matters: with under 3 rounds in either bucket, treat the number as noise.
+  </div>
+</div>
+
 <div class="tabs">
   <button class="tab active" onclick="showGolfChart('score',this)">Score</button>
   <button class="tab" onclick="showGolfChart('fir',this)">FIR %</button>
@@ -671,6 +683,7 @@ function setPeriod(tab, days, btn) {
     applyGolfPeriod();
     renderGolfBreakdown();
     renderGolfDistribution();
+    renderPracticeImpact();
     renderGolfTable();
     showGolfChart(activeGolfChart || 'score');
   }
@@ -934,6 +947,7 @@ async function loadGolf(preFetched, holesPreFetched) {
   renderGolfHeader();
   renderGolfBreakdown();
   renderGolfDistribution();
+  renderPracticeImpact();
   renderGolfTable();
   if (document.getElementById('section-golf').classList.contains('active')) {
     showGolfChart('score', document.querySelector('#section-golf .tab'));
@@ -1286,6 +1300,83 @@ function renderGolfBreakdown() {
   const totalSG = -lost.total;
   totalEl.textContent = fmtSG(totalSG) + ' strokes/rd';
   totalEl.style.color = sgColor(totalSG);
+}
+
+// Compute practice-impact metrics: avg score for rounds with recent practice
+// vs. avg score for rounds without. Lookback window = 14 days before each round.
+function computePracticeImpact(roundsArr, practiceArr) {
+  const LOOKBACK_DAYS = 14;
+  const ms = 86400000;
+  const withP = [];
+  const withoutP = [];
+  (roundsArr || []).forEach(r => {
+    if (r.score == null || isNaN(r.score) || !r.rawDate) return;
+    const cutoff = new Date(r.rawDate.getTime() - LOOKBACK_DAYS * ms);
+    const recentPractice = (practiceArr || []).some(p =>
+      p.rawDate && p.rawDate >= cutoff && p.rawDate < r.rawDate
+    );
+    (recentPractice ? withP : withoutP).push(r.score);
+  });
+  const avg = arr => arr.length ? arr.reduce((s, n) => s + n, 0) / arr.length : 0;
+  return {
+    withN: withP.length,
+    withAvg: avg(withP),
+    withoutN: withoutP.length,
+    withoutAvg: avg(withoutP),
+    delta: withP.length && withoutP.length ? avg(withP) - avg(withoutP) : null
+  };
+}
+
+function renderPracticeImpact() {
+  const box = document.getElementById('golf-practice-impact-box');
+  const body = document.getElementById('golf-practice-impact-body');
+  const sub = document.getElementById('golf-practice-impact-sub');
+  if (!box || !body) return;
+
+  const cutoff = periodCutoff('golf');
+  const periodRounds   = (allRounds  || []).filter(r => !cutoff || r.rawDate >= cutoff);
+  const periodPractice = (typeof practice !== 'undefined' ? practice : []).filter(p => !cutoff || p.rawDate >= cutoff);
+
+  // Hide if there's nothing useful to show
+  if (!periodRounds.length || !periodPractice.length) { box.style.display = 'none'; return; }
+  box.style.display = '';
+
+  const m = computePracticeImpact(periodRounds, periodPractice);
+  const totalMin = periodPractice.reduce((s, p) => s + (Number(p.duration) || 0), 0);
+  const totalBalls = periodPractice.reduce((s, p) => s + (Number(p.balls) || 0), 0);
+  sub.textContent = periodLabel('golf') + ' · ' + periodPractice.length + ' practice session' + (periodPractice.length === 1 ? '' : 's')
+                  + ' · ' + Math.round(totalMin / 60 * 10) / 10 + ' hr'
+                  + (totalBalls ? ' · ' + totalBalls + ' balls' : '');
+
+  const fmtAvg = v => v ? v.toFixed(1) : '-';
+  const lowSampleN = (m.withN < 3 || m.withoutN < 3);
+  const deltaTxt = m.delta == null
+    ? 'Not enough data — need rounds in both buckets'
+    : (m.delta < 0
+        ? Math.abs(m.delta).toFixed(1) + ' strokes better with practice'
+        : (m.delta > 0
+            ? m.delta.toFixed(1) + ' strokes worse with practice'
+            : 'No difference'));
+  const deltaColor = m.delta == null ? '#888' : (m.delta < 0 ? '#1D9E75' : (m.delta > 0 ? '#E24B4A' : '#888'));
+
+  body.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div style="background:#f8f8f6;border-radius:8px;padding:8px;">
+        <div style="font-size:10px;color:#888;margin-bottom:2px;">With practice (≤14d before)</div>
+        <div style="font-size:18px;font-weight:600;">${fmtAvg(m.withAvg)}</div>
+        <div style="font-size:10px;color:#888;margin-top:2px;">${m.withN} round${m.withN === 1 ? '' : 's'}</div>
+      </div>
+      <div style="background:#f8f8f6;border-radius:8px;padding:8px;">
+        <div style="font-size:10px;color:#888;margin-bottom:2px;">Without recent practice</div>
+        <div style="font-size:18px;font-weight:600;">${fmtAvg(m.withoutAvg)}</div>
+        <div style="font-size:10px;color:#888;margin-top:2px;">${m.withoutN} round${m.withoutN === 1 ? '' : 's'}</div>
+      </div>
+    </div>
+    <div style="background:var(--gym-wash, #fdf6ef);border:0.5px solid #f0e4d2;border-radius:8px;padding:6px 10px;font-size:11px;">
+      <strong style="color:${deltaColor};">${deltaTxt}</strong>
+      ${lowSampleN ? '<div style="font-size:10px;color:#888;margin-top:2px;">Low sample — keep logging.</div>' : ''}
+    </div>
+  `;
 }
 
 function renderGolfDistribution() {
@@ -2256,6 +2347,8 @@ async function loadPractice(preFetched) {
     };
   }).sort((a,b) => a.rawDate - b.rawDate);
   renderPracticeDashboard();
+  // Practice impact lives on the Golf tab but depends on practice data, so re-render here too.
+  if (typeof renderPracticeImpact === 'function') renderPracticeImpact();
   homeState.practice = true; tryRenderHome();
 }
 

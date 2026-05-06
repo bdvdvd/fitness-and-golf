@@ -12021,27 +12021,27 @@
     },
     {
       "Key": "golfTargetScore",
-      "Value": ""
+      "Value": 79
     },
     {
       "Key": "golfTargetFIR",
-      "Value": ""
+      "Value": 60
     },
     {
       "Key": "golfTargetGIR",
-      "Value": ""
+      "Value": 40
     },
     {
       "Key": "golfTarget3Putts",
-      "Value": ""
+      "Value": 1
     },
     {
       "Key": "practiceTargetHours",
-      "Value": ""
+      "Value": 180
     },
     {
       "Key": "gymGoal",
-      "Value": ""
+      "Value": "3 Gym Sessions per Week"
     },
     {
       "Key": "runRace",
@@ -12057,27 +12057,27 @@
     },
     {
       "Key": "vo2max",
-      "Value": ""
+      "Value": 53
     },
     {
       "Key": "ltPace",
-      "Value": ""
+      "Value": "1899-12-30T12:31:00.000Z"
     },
     {
       "Key": "weeklyKmTarget",
-      "Value": ""
+      "Value": 10
     },
     {
       "Key": "golfRoundsTarget",
-      "Value": ""
+      "Value": 50
     },
     {
       "Key": "golfTargetHandicap",
-      "Value": 0
+      "Value": 7
     },
     {
       "Key": "golfTargetPutts",
-      "Value": ""
+      "Value": 30
     },
     {
       "Key": "golfHandicap",

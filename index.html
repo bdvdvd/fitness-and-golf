@@ -3019,7 +3019,12 @@ function renderSettings() {
 
 function openSettingsModal() {
   const s = SETTINGS;
-  const fill = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  const fill = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    // Treat null/undefined as blank, but preserve 0 and other falsy-but-meaningful values.
+    el.value = (val == null) ? '' : String(val);
+  };
   fill('s-runRace', s.runRace);
   // Normalize ISO race dates to "Apr 26" so the input is readable/editable
   let raceDateVal = s.runRaceDate || '';

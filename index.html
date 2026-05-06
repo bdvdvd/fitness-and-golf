@@ -202,10 +202,14 @@ body { overscroll-behavior-y: contain; }
     <label><span>Weekly km target</span><input id="s-weeklyKmTarget" type="text" placeholder="40"></label>
 
     <h3>Golf</h3>
-    <label><span>Goal text</span><input id="s-golfGoal" type="text"></label>
+    <label><span>Goal text (optional, overrides auto subtitle)</span><input id="s-golfGoal" type="text"></label>
     <div class="modal-row">
+      <label><span>Current handicap</span><input id="s-golfHandicap" type="text" placeholder="10.3"></label>
       <label><span>Target handicap</span><input id="s-golfTargetHandicap" type="text" placeholder="7"></label>
+    </div>
+    <div class="modal-row">
       <label><span>Score target</span><input id="s-golfTargetScore" type="text"></label>
+      <label></label>
     </div>
     <div class="modal-row">
       <label><span>FIR target (%)</span><input id="s-golfTargetFIR" type="text" placeholder="60"></label>
@@ -3029,6 +3033,7 @@ function openSettingsModal() {
   fill('s-ltPace', s.ltPace);
   fill('s-weeklyKmTarget', s.weeklyKmTarget);
   fill('s-golfGoal', s.golfGoal);
+  fill('s-golfHandicap', s.golfHandicap);
   fill('s-golfTargetScore', s.golfTargetScore);
   fill('s-golfTargetHandicap', s.golfTargetHandicap);
   fill('s-golfTargetFIR', s.golfTargetFIR);
@@ -3049,7 +3054,7 @@ function closeSettingsModal() {
 async function saveSettingsToSheet() {
   const status = document.getElementById('settings-status');
   status.textContent = 'Saving...';
-  const keys = ['runRace','runRaceDate','runGoalTime','vo2max','ltPace','weeklyKmTarget','golfGoal','golfTargetScore','golfTargetHandicap','golfTargetFIR','golfTargetGIR','golfTargetPutts','golfTarget3Putts','practiceTargetHours','golfRoundsTarget','gymGoal'];
+  const keys = ['runRace','runRaceDate','runGoalTime','vo2max','ltPace','weeklyKmTarget','golfGoal','golfHandicap','golfTargetScore','golfTargetHandicap','golfTargetFIR','golfTargetGIR','golfTargetPutts','golfTarget3Putts','practiceTargetHours','golfRoundsTarget','gymGoal'];
   const updates = {};
   keys.forEach(k => {
     const el = document.getElementById('s-' + k);

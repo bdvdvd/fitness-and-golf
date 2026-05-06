@@ -260,7 +260,7 @@ body { overscroll-behavior-y: contain; }
 
 <div class="metrics-row">
   <div class="mc"><div class="mc-label">Latest round</div><div class="mc-val" id="home-golf-val"><span class="sk sk-val"></span></div><div class="mc-sub" id="home-golf-sub"><span class="sk sk-sub"></span></div></div>
-  <div class="mc"><div class="mc-label">Handicap</div><div class="mc-val">10.3</div><div class="mc-sub">target 7.0</div></div>
+  <div class="mc"><div class="mc-label">Handicap</div><div class="mc-val" id="home-golf-hcp"><span class="sk sk-val"></span></div><div class="mc-sub" id="home-golf-hcp-sub"><span class="sk sk-sub"></span></div></div>
   <div class="mc"><div class="mc-label">Latest practice</div><div class="mc-val" id="home-practice-val"><span class="sk sk-val"></span></div><div class="mc-sub" id="home-practice-sub"><span class="sk sk-sub"></span></div></div>
 </div>
 
@@ -324,7 +324,7 @@ body { overscroll-behavior-y: contain; }
 <div class="section" id="section-golf">
 
 <h1>Golf</h1>
-<p class="subtitle" id="golf-subtitle">Pitt Meadows GC · Goal: 7 handicap (current 10.3)</p>
+<p class="subtitle" id="golf-subtitle">Loading...</p>
 
 <div class="period-filter" data-tab="golf">
   <button onclick="setPeriod('golf',7,this)">7d</button>
@@ -337,7 +337,7 @@ body { overscroll-behavior-y: contain; }
   <div class="mc"><div class="mc-label">Rounds</div><div class="mc-val" id="golf-rounds"><span class="sk sk-val"></span></div><div class="mc-sub" id="golf-rounds-sub"><span class="sk sk-sub"></span></div></div>
   <div class="mc"><div class="mc-label">Scoring avg</div><div class="mc-val" id="golf-score-avg"><span class="sk sk-val"></span></div><div class="mc-sub" id="golf-score-sub"><span class="sk sk-sub"></span></div></div>
   <div class="mc"><div class="mc-label">Last 5 avg</div><div class="mc-val" id="golf-last5"><span class="sk sk-val"></span></div><div class="mc-sub" id="golf-last5-sub"><span class="sk sk-sub"></span></div></div>
-  <div class="mc"><div class="mc-label">Handicap</div><div class="mc-val" id="golf-handicap">10.3</div><div class="mc-sub">Golf Canada</div></div>
+  <div class="mc"><div class="mc-label">Handicap</div><div class="mc-val" id="golf-handicap"><span class="sk sk-val"></span></div><div class="mc-sub">Golf Canada</div></div>
 </div>
 
 <div class="metrics-row">
@@ -434,7 +434,7 @@ body { overscroll-behavior-y: contain; }
 </div>
 
 <div class="goal-box">
-  <h3 id="golf-targets-heading">Road to 7 handicap · from 10.3</h3>
+  <h3 id="golf-targets-heading">Targets</h3>
   <div class="goal-stats">
     <div class="goal-stat">Score target<span id="golf-target-score">≤ 82</span></div>
     <div class="goal-stat">FIR target<span id="golf-target-fir">60%</span></div>
@@ -451,17 +451,17 @@ body { overscroll-behavior-y: contain; }
     <span id="golf-breakdown-sub" style="font-size:10px;color:#888;font-weight:400;"></span>
   </h3>
   <div style="font-size:10px;color:var(--soft);margin-bottom:10px;line-height:1.4;">
-    Each row is your estimated strokes per round vs a 7-handicap baseline.
+    Each row is your estimated strokes per round vs a <span class="hcp-target-label">7</span>-handicap baseline.
     <strong style="color:#E24B4A;">Negative</strong> = strokes lost (worse than target).
     <strong style="color:#1D9E75;">Positive</strong> = strokes gained (better than target).
-    Closer to <strong>0.0</strong> is the goal — the totals tell you how far you are from playing like a 7 hcp.
+    Closer to <strong>0.0</strong> is the goal — the totals tell you how far you are from playing like a <span class="hcp-target-label">7</span> hcp.
   </div>
   <div id="golf-breakdown-rows"></div>
   <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#5c3d0b;background:var(--gym-wash, #fdf6ef);border-radius:6px;padding:6px 10px;margin-top:8px;border:0.5px solid #f0e4d2;">
-    <span>Total vs 7 hcp baseline</span>
+    <span>Total vs <span class="hcp-target-label">7</span> hcp baseline</span>
     <span id="golf-breakdown-total" style="font-weight:600;">-</span>
   </div>
-  <div style="font-size:10px;color:var(--soft);margin-top:6px;">Bars show performance vs the 7-hcp target (red = far below, green = at or above). Estimates use rough per-shot coefficients; directional rather than precise.</div>
+  <div style="font-size:10px;color:var(--soft);margin-top:6px;">Bars show performance vs the <span class="hcp-target-label">7</span>-hcp target (red = far below, green = at or above). Estimates use rough per-shot coefficients; directional rather than precise.</div>
 </div>
 
 <div class="workout-box" id="golf-distribution-box" style="display:none;">
@@ -969,7 +969,6 @@ function renderGolfHeader() {
     set('golf-last5-sub', '');
   }
 
-  // Handicap from settings (fall back to 10.3)
   if (SETTINGS && SETTINGS.golfHandicap) set('golf-handicap', SETTINGS.golfHandicap);
 
   // Card 5-8: percentages in period
@@ -1083,17 +1082,29 @@ function renderGolfYtdGoal() {
   </div>`;
 }
 
-// 7-handicap baseline used for the strokes-gained-style breakdown.
-const HCP7_BASELINE = {
-  fwPct: 52,        // % of par-4/5 fairways hit
-  girPct: 42,       // % of greens in regulation
-  udPct: 47,        // % of up-and-down attempts converted
-  sandPct: 30,      // % of sand-save attempts converted
-  putts: 31,        // putts per round
-  threePutts: 1,    // 3-putts per round
-  penalties: 1,     // penalty strokes per round
-  dblChips: 0       // double chips per round
-};
+// Baseline stats for a target-handicap golfer, used for the strokes-gained-style breakdown.
+// Anchored at 7-hcp; per-stroke deltas are rough empirical coefficients (Arccos-style amateur data).
+function baselineForHandicap(targetHcp) {
+  const hcp = Number(targetHcp);
+  const d = (Number.isFinite(hcp) ? hcp : 7) - 7;
+  return {
+    fwPct:      Math.max(0, 52 - d * 1.0),
+    girPct:     Math.max(0, 42 - d * 1.5),
+    udPct:      Math.max(0, 47 - d * 1.0),
+    sandPct:    Math.max(0, 30 - d * 1.4),
+    putts:      31 + d * 0.15,
+    threePutts: Math.max(0, 1 + d * 0.07),
+    penalties:  Math.max(0, 1 + d * 0.10),
+    dblChips:   Math.max(0, d * 0.04)
+  };
+}
+function currentTargetHcp() {
+  const v = Number(SETTINGS && SETTINGS.golfTargetHandicap);
+  return Number.isFinite(v) ? v : 7;
+}
+function currentBaseline() {
+  return baselineForHandicap(currentTargetHcp());
+}
 
 // Compute aggregated per-round metrics from per-hole rows in the current period.
 function computeBreakdownFromHoles(holes) {
@@ -1141,10 +1152,10 @@ function computeBreakdownFromHoles(holes) {
   };
 }
 
-// Estimate strokes lost per round vs the 7-handicap baseline, broken into 4 categories.
-function estimateStrokesLost(m) {
-  const b = HCP7_BASELINE;
-  // Driving: penalty diff (1:1) + missed-FW deficit (~0.3 strokes per missed FW vs 7 hcp)
+// Estimate strokes lost per round vs the target-handicap baseline, broken into 4 categories.
+function estimateStrokesLost(m, baseline) {
+  const b = baseline || currentBaseline();
+  // Driving: penalty diff (1:1) + missed-FW deficit (~0.3 strokes per missed FW vs target)
   const penaltyDiff = Math.max(0, m.penaltiesPerRound - b.penalties);
   const expectedFwMisses = 14 * (1 - b.fwPct / 100);
   const actualFwMisses   = 14 * (1 - m.fwPct  / 100);
@@ -1203,33 +1214,36 @@ function renderGolfBreakdown() {
   if (!m) { box.style.display = 'none'; return; }
   box.style.display = '';
 
-  const lost = estimateStrokesLost(m);
+  const targetHcp = currentTargetHcp();
+  const baseline = baselineForHandicap(targetHcp);
+  const lost = estimateStrokesLost(m, baseline);
   subEl.textContent = periodLabel('golf') + ' · ' + m.nRounds + ' round' + (m.nRounds === 1 ? '' : 's');
+  document.querySelectorAll('.hcp-target-label').forEach(el => { el.textContent = String(targetHcp); });
 
   const cats = [
     {
       label: 'Driving',
       detail: m.fwPct.toFixed(0) + '% FW · ' + m.penaltiesPerRound.toFixed(1) + ' pen/rd',
       lost: lost.driving,
-      bar: breakdownBar(m.fwPct, HCP7_BASELINE.fwPct, false)
+      bar: breakdownBar(m.fwPct, baseline.fwPct, false)
     },
     {
       label: 'Approach',
       detail: m.girPct.toFixed(0) + '% GIR',
       lost: lost.approach,
-      bar: breakdownBar(m.girPct, HCP7_BASELINE.girPct, false)
+      bar: breakdownBar(m.girPct, baseline.girPct, false)
     },
     {
       label: 'Short game',
       detail: m.udPct.toFixed(0) + '% U&D · ' + m.sandPct.toFixed(0) + '% sand · ' + m.dblChipsPerRound.toFixed(1) + ' dbl chips/rd',
       lost: lost.shortGame,
-      bar: breakdownBar(m.udPct, HCP7_BASELINE.udPct, false)
+      bar: breakdownBar(m.udPct, baseline.udPct, false)
     },
     {
       label: 'Putting',
       detail: m.puttsPerRound.toFixed(1) + ' putts · ' + m.threePuttsPerRound.toFixed(1) + ' three-putts/rd',
       lost: lost.putting,
-      bar: breakdownBar(m.puttsPerRound, HCP7_BASELINE.putts, true)
+      bar: breakdownBar(m.puttsPerRound, baseline.putts, true)
     }
   ];
 
@@ -2956,17 +2970,37 @@ function renderSettings() {
   if (s.ltPace) set('vo2max-sub', 'LT: ' + s.ltPace);
 
   // Golf
-  set('golf-subtitle', s.golfGoal);
+  const subEl = document.getElementById('golf-subtitle');
+  if (subEl) {
+    if (s.golfGoal) {
+      subEl.textContent = s.golfGoal;
+    } else if (s.golfHandicap || s.golfTargetHandicap) {
+      const cur = s.golfHandicap || '—';
+      const tgt = s.golfTargetHandicap || 7;
+      subEl.textContent = 'Goal: ' + tgt + ' handicap (current ' + cur + ')';
+    } else {
+      subEl.textContent = '';
+    }
+  }
   if (s.golfTargetScore) set('golf-target-score', '≤ ' + s.golfTargetScore);
   if (s.golfTargetFIR) set('golf-target-fir', s.golfTargetFIR + '%');
   if (s.golfTargetGIR) set('golf-target-gir', s.golfTargetGIR + '%');
   if (s.golfTargetPutts) set('golf-target-putts', '≤ ' + s.golfTargetPutts);
   if (s.golfTarget3Putts) set('golf-target-3putts', '≤ ' + s.golfTarget3Putts + '/rd');
+  // Home Golf handicap tile
+  const hcpEl = document.getElementById('home-golf-hcp');
+  if (hcpEl) hcpEl.textContent = s.golfHandicap || '—';
+  const hcpSubEl = document.getElementById('home-golf-hcp-sub');
+  if (hcpSubEl) {
+    hcpSubEl.textContent = s.golfTargetHandicap
+      ? 'target ' + Number(s.golfTargetHandicap).toFixed(1)
+      : '';
+  }
   // Dynamic targets heading: "Road to {targetHcp} handicap · from {currentHcp}"
   const headEl = document.getElementById('golf-targets-heading');
-  if (headEl) {
+  if (headEl && (s.golfHandicap || s.golfTargetHandicap)) {
     const tgtHcp = s.golfTargetHandicap || 7;
-    const curHcp = s.golfHandicap || '10.3';
+    const curHcp = s.golfHandicap || '—';
     headEl.textContent = 'Road to ' + tgtHcp + ' handicap · from ' + curHcp;
   }
   if (s.practiceTargetHours) {

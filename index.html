@@ -189,6 +189,20 @@ body { overscroll-behavior-y: contain; }
 .golf-hole-cell.empty .hs  { color: #ccc; }
 .golf-detail-totals { display: flex; flex-wrap: wrap; gap: 10px 14px; font-size: 11px; color: var(--golf-ink); padding: 6px 4px 0; }
 .golf-detail-totals span strong { color: #333; font-weight: 600; }
+@media (min-width: 600px) {
+  .golf-detail-grid { grid-template-columns: 44px repeat(9, 1fr) 64px; gap: 4px; }
+  .golf-detail-row-label { font-size: 12px; padding-right: 8px; }
+  .golf-hole-cell { padding: 6px 2px; }
+  .golf-hole-cell .hh { font-size: 11px; }
+  .golf-hole-cell .hp { font-size: 11px; }
+  .golf-hole-cell .hs { font-size: 20px; }
+  .golf-hole-cell .hpu { font-size: 11px; }
+  .golf-hole-total { padding: 6px 4px; }
+  .golf-hole-total .hh { font-size: 11px; }
+  .golf-hole-total .hs { font-size: 20px; }
+  .golf-hole-total .hpu { font-size: 11px; }
+  .golf-detail-totals { font-size: 13px; gap: 12px 18px; padding-top: 10px; }
+}
 .gym-badges { margin-top: 3px; display: flex; flex-wrap: wrap; gap: 4px; }
 .gym-badge { font-size: 9px; color: var(--gym-ink); background: var(--gym-wash); padding: 1px 6px; border-radius: 8px; font-weight: 500; border: 0.5px solid #f0e4d2; }
 

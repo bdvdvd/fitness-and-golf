@@ -12171,6 +12171,17 @@
       "Strava ID": 18340309368,
       "Indoor": false,
       "Elevation": 6
+    },
+    {
+      "Date": "2026-05-10T20:57:02.000Z",
+      "Type": "Shakeout",
+      "Km": 3.2,
+      "Pace": 5.17,
+      "HR": 140,
+      "Notes": "Evening Run",
+      "Strava ID": 18459508635,
+      "Indoor": false,
+      "Elevation": 6
     }
   ],
   "Practice": [

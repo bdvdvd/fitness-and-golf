@@ -12182,6 +12182,17 @@
       "Strava ID": 18459508635,
       "Indoor": false,
       "Elevation": 6
+    },
+    {
+      "Date": "2026-05-11T19:26:28.000Z",
+      "Type": "Easy",
+      "Km": 6.01,
+      "Pace": 5.62,
+      "HR": 152,
+      "Notes": "Evening Run",
+      "Strava ID": 18471920557,
+      "Indoor": false,
+      "Elevation": 5
     }
   ],
   "Practice": [

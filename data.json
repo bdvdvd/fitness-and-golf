@@ -11686,6 +11686,11 @@
       "Raw name": "Single-Leg Calf Raise",
       "Canonical": "Single-Leg Calf Raise",
       "Muscle group": "Legs"
+    },
+    {
+      "Raw name": "Seated Bicep Curls",
+      "Canonical": "Seated Bicep Curls",
+      "Muscle group": "Arms"
     }
   ],
   "Runs": [

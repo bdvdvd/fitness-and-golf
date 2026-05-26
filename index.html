@@ -207,7 +207,7 @@ body { overscroll-behavior-y: contain; }
 .gym-badge { font-size: 9px; color: var(--gym-ink); background: var(--gym-wash); padding: 1px 6px; border-radius: 8px; font-weight: 500; border: 0.5px solid #f0e4d2; }
 
 /* Period filter pills */
-.period-filter { display: flex; gap: 4px; margin-bottom: 14px; }
+.period-filter { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 14px; }
 .period-filter button { flex: 0 0 auto; padding: 5px 12px; font-size: 11px; font-weight: 500; background: #fff; border: 0.5px solid var(--border); border-radius: 999px; cursor: pointer; color: var(--muted); }
 .period-filter button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 </style>
@@ -379,6 +379,11 @@ body { overscroll-behavior-y: contain; }
   <button onclick="setPeriod('golf',7,this)">7d</button>
   <button onclick="setPeriod('golf',30,this)" class="active">30d</button>
   <button onclick="setPeriod('golf',90,this)">90d</button>
+  <button onclick="setPeriod('golf','last1',this)">Last</button>
+  <button onclick="setPeriod('golf','last5',this)">Last 5</button>
+  <button onclick="setPeriod('golf','last10',this)">Last 10</button>
+  <button onclick="setPeriod('golf','last20',this)">Last 20</button>
+  <button onclick="setPeriod('golf','ytd',this)">YTD</button>
   <button onclick="setPeriod('golf',null,this)">All</button>
 </div>
 
@@ -685,14 +690,34 @@ body { overscroll-behavior-y: contain; }
 <script>
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyU3W0ZvA5cdSmmLxSxa4OP-JJjIAOOEc6UqRphYXB1JRaedSY4mH96gNRPod672b1z/exec?key=bdv-8f3k-2026';
 
-// Period filter state per tab. null = all time, otherwise days.
+// Period filter state per tab.
+// - number = days back from today
+// - 'lastN' (e.g. 'last5') = N most recent rounds (golf only)
+// - 'ytd' = year to date (golf only)
+// - null = all time
 const PERIOD = { running: 30, golf: 30, gym: 30 };
 function periodCutoff(tab) {
-  const days = PERIOD[tab];
-  if (days == null) return null;
-  const d = new Date(); d.setHours(0,0,0,0);
-  d.setDate(d.getDate() - days);
-  return d;
+  const p = PERIOD[tab];
+  if (p == null) return null;
+  if (typeof p === 'number') {
+    const d = new Date(); d.setHours(0,0,0,0);
+    d.setDate(d.getDate() - p);
+    return d;
+  }
+  if (tab === 'golf') {
+    if (p === 'ytd') {
+      const d = new Date();
+      return new Date(d.getFullYear(), 0, 1);
+    }
+    const m = /^last(\d+)$/.exec(p);
+    if (m && Array.isArray(allRounds) && allRounds.length) {
+      const n = Number(m[1]);
+      const sorted = [...allRounds].sort((a, b) => b.rawDate - a.rawDate);
+      const nth = sorted[Math.min(n - 1, sorted.length - 1)];
+      return nth ? new Date(nth.rawDate.getTime()) : null;
+    }
+  }
+  return null;
 }
 function emptyRow(cols, title, hint) {
   return `<tr class="empty-row"><td colspan="${cols}">
@@ -701,8 +726,16 @@ function emptyRow(cols, title, hint) {
   </td></tr>`;
 }
 function periodLabel(tab) {
-  const d = PERIOD[tab];
-  return d == null ? 'all time' : 'last ' + d + ' days';
+  const p = PERIOD[tab];
+  if (p == null) return 'all time';
+  if (typeof p === 'number') return 'last ' + p + ' days';
+  if (p === 'ytd') return 'YTD';
+  const m = /^last(\d+)$/.exec(p);
+  if (m) {
+    const n = Number(m[1]);
+    return 'last ' + (n === 1 ? 'round' : n + ' rounds');
+  }
+  return String(p);
 }
 function inPeriod(date, tab) {
   const cutoff = periodCutoff(tab);

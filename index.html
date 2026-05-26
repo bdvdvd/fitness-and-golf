@@ -396,6 +396,11 @@ body { overscroll-behavior-y: contain; }
   <div class="mc"><div class="mc-label">3-putts/rd</div><div class="mc-val" id="golf-3p"><span class="sk sk-val"></span></div><div class="mc-sub" id="golf-3p-sub">target ≤ 1</div></div>
 </div>
 
+<div class="metrics-row">
+  <div class="mc"><div class="mc-label">Up & Down %</div><div class="mc-val" id="golf-ud"><span class="sk sk-val"></span></div><div class="mc-sub" id="golf-ud-sub"><span class="sk sk-sub"></span></div></div>
+  <div class="mc"><div class="mc-label">Sand save %</div><div class="mc-val" id="golf-sand"><span class="sk sk-val"></span></div><div class="mc-sub" id="golf-sand-sub"><span class="sk sk-sub"></span></div></div>
+</div>
+
 <div class="goals-box" style="margin-top:6px;">
   <h3>Year goal</h3>
   <div id="golf-ytd-goal">
@@ -964,6 +969,10 @@ async function loadGolf(preFetched, holesPreFetched) {
     gir:     numOrNull(r.GIR),
     putts:   numOrNull(r.Putts),
     threePutts: numOrNull(r['3-Putts'] != null && r['3-Putts'] !== '' ? r['3-Putts'] : r.ThreePutts),
+    udAtt:    numOrNull(r['U&D Att']),
+    udMade:   numOrNull(r['U&D Made']),
+    sandAtt:  numOrNull(r['Sand Att']),
+    sandMade: numOrNull(r['Sand Saves']),
     notes:   r.Notes || ''
   }));
   allHoles = (holesData || []).map(h => ({
@@ -1073,6 +1082,42 @@ function renderGolfHeader() {
     set('golf-3p', avg3.toFixed(1));
   } else set('golf-3p', '-');
   stats.push({ key: '3-putts', label: '3-putts per round', current: avg3, target: t3p, dir: -1, unit: '', subId: 'golf-3p-sub', baseSub: 'target ≤ ' + t3p, strokesPerUnit: 1.0 });
+
+  // Up & Down: sum attempts and makes across the period.
+  // U&D "Att" in the Rounds sheet historically counts only missed attempts (logger normalizes
+  // makes separately), so total opportunities = udAtt + udMade.
+  const udTotal = rounds.reduce((acc, r) => {
+    const a = Number(r.udAtt)  || 0;
+    const m = Number(r.udMade) || 0;
+    acc.att += a + m;
+    acc.made += m;
+    return acc;
+  }, {att: 0, made: 0});
+  if (udTotal.att > 0) {
+    const pct = Math.round(udTotal.made / udTotal.att * 100);
+    set('golf-ud', pct + '%');
+    set('golf-ud-sub', udTotal.made + ' / ' + udTotal.att + ' attempts');
+  } else {
+    set('golf-ud', '-');
+    set('golf-ud-sub', 'No opportunities yet');
+  }
+
+  // Sand saves: same accounting pattern as U&D.
+  const sandTotal = rounds.reduce((acc, r) => {
+    const a = Number(r.sandAtt)  || 0;
+    const m = Number(r.sandMade) || 0;
+    acc.att += a + m;
+    acc.made += m;
+    return acc;
+  }, {att: 0, made: 0});
+  if (sandTotal.att > 0) {
+    const pct = Math.round(sandTotal.made / sandTotal.att * 100);
+    set('golf-sand', pct + '%');
+    set('golf-sand-sub', sandTotal.made + ' / ' + sandTotal.att + ' attempts');
+  } else {
+    set('golf-sand', '-');
+    set('golf-sand-sub', 'No bunker shots');
+  }
 
   // Update each card's sub-text with on/off target status and find weakest
   let worst = null;

@@ -11055,16 +11055,16 @@
     {
       "Day": "Day 1",
       "Group": 1,
-      "Exercise": "Band Pull-Apart",
-      "S1 Reps": 15,
+      "Exercise": "Serratus Wall Slide",
+      "S1 Reps": 10,
       "S1 Wt": "-",
-      "S2 Reps": 15,
+      "S2 Reps": 10,
       "S2 Wt": "-",
-      "S3 Reps": 15,
+      "S3 Reps": 10,
       "S3 Wt": "-",
       "S4 Reps": "",
       "S4 Wt": "",
-      "Notes": "Shoulder health"
+      "Notes": "NEW - shoulder health + golf posture"
     },
     {
       "Day": "Day 1",
@@ -11078,7 +11078,7 @@
       "S3 Wt": "-",
       "S4 Reps": "",
       "S4 Wt": "",
-      "Notes": "Golf rotation + spine mobility"
+      "Notes": "Golf rotation warm-up"
     },
     {
       "Day": "Day 1",
@@ -11086,66 +11086,66 @@
       "Exercise": "Barbell Bench Press",
       "S1 Reps": 5,
       "S1 Wt": 185,
-      "S2 Reps": 3,
+      "S2 Reps": 4,
       "S2 Wt": 215,
       "S3 Reps": 3,
-      "S3 Wt": 230,
+      "S3 Wt": 235,
       "S4 Reps": 3,
-      "S4 Wt": 235,
-      "Notes": "Chase 240+"
+      "S4 Wt": 240,
+      "Notes": "Main lift - chase 245"
     },
     {
       "Day": "Day 1",
       "Group": 2,
-      "Exercise": "DB Split Squat",
-      "S1 Reps": "8/side",
-      "S1 Wt": 50,
-      "S2 Reps": "8/side",
+      "Exercise": "Landmine Squat",
+      "S1 Reps": 10,
+      "S1 Wt": 45,
+      "S2 Reps": 10,
       "S2 Wt": 55,
-      "S3 Reps": "8/side",
+      "S3 Reps": 10,
       "S3 Wt": 55,
       "S4 Reps": "",
       "S4 Wt": "",
-      "Notes": "Hip stability"
+      "Notes": "NEW - quad/glute, spine-friendly"
     },
     {
       "Day": "Day 1",
       "Group": 3,
-      "Exercise": "Chest-Supported DB Row",
+      "Exercise": "Barbell Row",
       "S1 Reps": 8,
-      "S1 Wt": 75,
+      "S1 Wt": 135,
       "S2 Reps": 8,
-      "S2 Wt": 80,
+      "S2 Wt": 155,
       "S3 Reps": 8,
-      "S3 Wt": 80,
+      "S3 Wt": 165,
       "S4 Reps": "",
       "S4 Wt": "",
-      "Notes": "No axial load on spine"
+      "Notes": "Superset with bench"
     },
     {
       "Day": "Day 1",
       "Group": 3,
-      "Exercise": "Dead Bug",
-      "S1 Reps": "8/side",
+      "Exercise": "Copenhagen Plank",
+      "S1 Reps": "20s/side",
       "S1 Wt": "-",
-      "S2 Reps": "8/side",
+      "S2 Reps": "20s/side",
       "S2 Wt": "-",
-      "S3 Reps": "8/side",
+      "S3 Reps": "20s/side",
       "S3 Wt": "-",
       "S4 Reps": "",
       "S4 Wt": "",
-      "Notes": "Lumbar stability"
+      "Notes": "NEW - hip adductor + core"
     },
     {
       "Day": "Day 1",
       "Group": 3,
       "Exercise": "Cable Chop (low to high)",
       "S1 Reps": "10/side",
-      "S1 Wt": 40,
+      "S1 Wt": 45,
       "S2 Reps": "10/side",
-      "S2 Wt": 45,
+      "S2 Wt": 50,
       "S3 Reps": "10/side",
-      "S3 Wt": 45,
+      "S3 Wt": 50,
       "S4 Reps": "",
       "S4 Wt": "",
       "Notes": "Golf rotation power"
@@ -11153,7 +11153,21 @@
     {
       "Day": "Day 1",
       "Group": 4,
-      "Exercise": "Triceps Rope Pushdown",
+      "Exercise": "Dumbbell Squeeze Press",
+      "S1 Reps": 10,
+      "S1 Wt": 55,
+      "S2 Reps": 10,
+      "S2 Wt": 60,
+      "S3 Reps": 10,
+      "S3 Wt": 60,
+      "S4 Reps": "",
+      "S4 Wt": "",
+      "Notes": "NEW - inner chest"
+    },
+    {
+      "Day": "Day 1",
+      "Group": 4,
+      "Exercise": "Cable Rope Hammer Curl",
       "S1 Reps": 12,
       "S1 Wt": 50,
       "S2 Reps": 12,
@@ -11162,32 +11176,18 @@
       "S3 Wt": 55,
       "S4 Reps": "",
       "S4 Wt": "",
-      "Notes": ""
+      "Notes": "NEW - arms"
     },
     {
       "Day": "Day 1",
       "Group": 4,
-      "Exercise": "Cable Lateral Raise",
-      "S1 Reps": 12,
-      "S1 Wt": 15,
-      "S2 Reps": 12,
-      "S2 Wt": 15,
-      "S3 Reps": 12,
-      "S3 Wt": 15,
-      "S4 Reps": "",
-      "S4 Wt": "",
-      "Notes": "Shoulder health"
-    },
-    {
-      "Day": "Day 1",
-      "Group": 4,
-      "Exercise": "Single-Leg Calf Raise",
-      "S1 Reps": "12/side",
-      "S1 Wt": 26,
-      "S2 Reps": "12/side",
-      "S2 Wt": 26,
-      "S3 Reps": "12/side",
-      "S3 Wt": 26,
+      "Exercise": "Standing Calf Raise",
+      "S1 Reps": 20,
+      "S1 Wt": "BW",
+      "S2 Reps": 20,
+      "S2 Wt": "BW",
+      "S3 Reps": 20,
+      "S3 Wt": "BW",
       "S4 Reps": "",
       "S4 Wt": "",
       "Notes": ""
@@ -11217,8 +11217,8 @@
       "S3 Reps": "",
       "S3 Wt": "",
       "S4 Reps": "",
-      "S4 Wt": "",
-      "Notes": "Back activation"
+      "S4 Wt": "Back activation",
+      "Notes": ""
     },
     {
       "Day": "Day 2",
@@ -11231,50 +11231,50 @@
       "S3 Reps": 3,
       "S3 Wt": 315,
       "S4 Reps": 3,
-      "S4 Wt": 335,
-      "Notes": "Build back conservatively"
+      "S4 Wt": 340,
+      "Notes": "Main lift - chase PR"
     },
     {
       "Day": "Day 2",
       "Group": 2,
-      "Exercise": "Incline DB Bench Press",
-      "S1 Reps": 8,
-      "S1 Wt": 70,
-      "S2 Reps": 8,
-      "S2 Wt": 75,
-      "S3 Reps": 8,
-      "S3 Wt": 80,
-      "S4 Reps": "",
-      "S4 Wt": "",
-      "Notes": "2nd bench stimulus"
-    },
-    {
-      "Day": "Day 2",
-      "Group": 3,
-      "Exercise": "Hamstring Curl Machine",
-      "S1 Reps": 10,
-      "S1 Wt": 65,
-      "S2 Reps": 10,
-      "S2 Wt": 70,
-      "S3 Reps": 10,
-      "S3 Wt": 75,
-      "S4 Reps": "",
-      "S4 Wt": "",
-      "Notes": "Posterior chain"
-    },
-    {
-      "Day": "Day 2",
-      "Group": 3,
-      "Exercise": "Weighted Neutral-Grip Pull-Up",
+      "Exercise": "Barbell Overhead Press",
       "S1 Reps": 5,
-      "S1 Wt": 25,
+      "S1 Wt": 95,
       "S2 Reps": 5,
-      "S2 Wt": 35,
+      "S2 Wt": 115,
+      "S3 Reps": 5,
+      "S3 Wt": 125,
+      "S4 Reps": "",
+      "S4 Wt": "",
+      "Notes": "NEW - shoulder compound"
+    },
+    {
+      "Day": "Day 2",
+      "Group": 3,
+      "Exercise": "Weighted Pull-Up",
+      "S1 Reps": 5,
+      "S1 Wt": 35,
+      "S2 Reps": 5,
+      "S2 Wt": 45,
       "S3 Reps": 5,
       "S3 Wt": 45,
       "S4 Reps": "",
       "S4 Wt": "",
       "Notes": ""
+    },
+    {
+      "Day": "Day 2",
+      "Group": 3,
+      "Exercise": "Landmine Romanian Deadlift",
+      "S1 Reps": "8/side",
+      "S1 Wt": 70,
+      "S2 Reps": "8/side",
+      "S2 Wt": 80,
+      "S3 Reps": "8/side",
+      "S3 Wt": 80,
+      "S4 Reps": "",
+      "S4 Wt": "",
+      "Notes": "NEW - unilateral hinge"
     },
     {
       "Day": "Day 2",
@@ -11293,16 +11293,16 @@
     {
       "Day": "Day 2",
       "Group": 4,
-      "Exercise": "Zottman Curl",
-      "S1 Reps": 10,
-      "S1 Wt": 30,
-      "S2 Reps": 10,
-      "S2 Wt": 30,
-      "S3 Reps": 10,
-      "S3 Wt": 35,
+      "Exercise": "Seated Band Abduction",
+      "S1 Reps": 15,
+      "S1 Wt": "-",
+      "S2 Reps": 15,
+      "S2 Wt": "-",
+      "S3 Reps": 15,
+      "S3 Wt": "-",
       "S4 Reps": "",
       "S4 Wt": "",
-      "Notes": ""
+      "Notes": "NEW - glute med, hip stability"
     },
     {
       "Day": "Day 2",
@@ -11349,16 +11349,16 @@
     {
       "Day": "Day 3",
       "Group": 1,
-      "Exercise": "Glute Bridge Hold",
-      "S1 Reps": "60s",
+      "Exercise": "Lateral Band Walks",
+      "S1 Reps": "10 each side",
       "S1 Wt": "-",
-      "S2 Reps": "60s",
+      "S2 Reps": "10 each side",
       "S2 Wt": "-",
       "S3 Reps": "",
       "S3 Wt": "",
       "S4 Reps": "",
-      "S4 Wt": "",
-      "Notes": "Glute activation"
+      "S4 Wt": "Hip stability",
+      "Notes": ""
     },
     {
       "Day": "Day 3",
@@ -11371,8 +11371,8 @@
       "S3 Reps": 5,
       "S3 Wt": 225,
       "S4 Reps": 3,
-      "S4 Wt": 235,
-      "Notes": "Chase 245+ by week 4"
+      "S4 Wt": 240,
+      "Notes": "Main lift - chase 245+"
     },
     {
       "Day": "Day 3",
@@ -11383,24 +11383,10 @@
       "S2 Reps": 10,
       "S2 Wt": 75,
       "S3 Reps": 10,
-      "S3 Wt": 75,
+      "S3 Wt": 80,
       "S4 Reps": "",
       "S4 Wt": "",
-      "Notes": "Glute strength - back protection"
-    },
-    {
-      "Day": "Day 3",
-      "Group": 3,
-      "Exercise": "Rear-Foot Elevated Split Squat",
-      "S1 Reps": "8/side",
-      "S1 Wt": 45,
-      "S2 Reps": "8/side",
-      "S2 Wt": 50,
-      "S3 Reps": "8/side",
-      "S3 Wt": 50,
-      "S4 Reps": "",
-      "S4 Wt": "",
-      "Notes": "Golf stability"
+      "Notes": "Glute strength superset"
     },
     {
       "Day": "Day 3",
@@ -11411,10 +11397,24 @@
       "S2 Reps": 10,
       "S2 Wt": 175,
       "S3 Reps": 10,
-      "S3 Wt": 175,
+      "S3 Wt": 185,
       "S4 Reps": "",
       "S4 Wt": "",
       "Notes": ""
+    },
+    {
+      "Day": "Day 3",
+      "Group": 3,
+      "Exercise": "DB Incline Press",
+      "S1 Reps": 8,
+      "S1 Wt": 65,
+      "S2 Reps": 8,
+      "S2 Wt": 70,
+      "S3 Reps": 8,
+      "S3 Wt": 75,
+      "S4 Reps": "",
+      "S4 Wt": "",
+      "Notes": "2nd chest stimulus"
     },
     {
       "Day": "Day 3",
@@ -11433,13 +11433,27 @@
     {
       "Day": "Day 3",
       "Group": 4,
-      "Exercise": "DB Arnold Press",
+      "Exercise": "Barbell Curl",
       "S1 Reps": 10,
-      "S1 Wt": 40,
+      "S1 Wt": 65,
       "S2 Reps": 10,
-      "S2 Wt": 45,
+      "S2 Wt": 70,
       "S3 Reps": 10,
-      "S3 Wt": 45,
+      "S3 Wt": 75,
+      "S4 Reps": "",
+      "S4 Wt": "",
+      "Notes": "NEW - straight bar curl"
+    },
+    {
+      "Day": "Day 3",
+      "Group": 4,
+      "Exercise": "Cable Lateral Raise",
+      "S1 Reps": 12,
+      "S1 Wt": 15,
+      "S2 Reps": 12,
+      "S2 Wt": 15,
+      "S3 Reps": 12,
+      "S3 Wt": 15,
       "S4 Reps": "",
       "S4 Wt": "",
       "Notes": ""
@@ -11447,30 +11461,16 @@
     {
       "Day": "Day 3",
       "Group": 4,
-      "Exercise": "Standing Calf Raise",
-      "S1 Reps": 20,
-      "S1 Wt": "BW",
-      "S2 Reps": 20,
-      "S2 Wt": "BW",
-      "S3 Reps": 20,
-      "S3 Wt": "BW",
+      "Exercise": "Single-Leg Calf Raise",
+      "S1 Reps": "12/side",
+      "S1 Wt": 26,
+      "S2 Reps": "12/side",
+      "S2 Wt": 26,
+      "S3 Reps": "12/side",
+      "S3 Wt": 26,
       "S4 Reps": "",
       "S4 Wt": "",
       "Notes": ""
-    },
-    {
-      "Day": "Day 3",
-      "Group": 4,
-      "Exercise": "Russian Twist",
-      "S1 Reps": 10,
-      "S1 Wt": 40,
-      "S2 Reps": 10,
-      "S2 Wt": 40,
-      "S3 Reps": 10,
-      "S3 Wt": 40,
-      "S4 Reps": "",
-      "S4 Wt": "",
-      "Notes": "Rotational core - golf power"
     }
   ],
   "Exercises": [
@@ -13274,6 +13274,15 @@
       "Balls Hit": "",
       "Drills": "",
       "Notes": "12 holes Stanley Park Pitch n Putt with Anna and Ava"
+    },
+    {
+      "Date": "2026-05-26T07:00:00.000Z",
+      "Location": "Short Game",
+      "Duration": 20,
+      "Focus": "Chipping",
+      "Balls Hit": "",
+      "Drills": "Chips outside on Floor 6",
+      "Notes": ""
     }
   ],
   "Settings": [

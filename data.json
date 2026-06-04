@@ -11483,7 +11483,7 @@
       "Total Cal": ""
     },
     {
-      "Date": "2026-06-01T07:00:00.000Z",
+      "Date": "2026-06-04T07:00:00.000Z",
       "Rotation": 6,
       "Day": "Day 1",
       "Group": "",
@@ -11501,7 +11501,7 @@
       "Total Cal": ""
     },
     {
-      "Date": "2026-06-01T07:00:00.000Z",
+      "Date": "2026-06-04T07:00:00.000Z",
       "Rotation": 6,
       "Day": "Day 1",
       "Group": "",
@@ -11519,7 +11519,7 @@
       "Total Cal": ""
     },
     {
-      "Date": "2026-06-01T07:00:00.000Z",
+      "Date": "2026-06-04T07:00:00.000Z",
       "Rotation": 6,
       "Day": "Day 1",
       "Group": "",
@@ -11532,12 +11532,12 @@
       "Set 3 Weight": 245,
       "Set 4 Reps": 2,
       "Set 4 Weight": 255,
-      "Note": "",
+      "Note": "Did a 5th set at 4x225",
       "Time": "",
       "Total Cal": ""
     },
     {
-      "Date": "2026-06-01T07:00:00.000Z",
+      "Date": "2026-06-04T07:00:00.000Z",
       "Rotation": 6,
       "Day": "Day 1",
       "Group": "",
@@ -11555,7 +11555,7 @@
       "Total Cal": ""
     },
     {
-      "Date": "2026-06-01T07:00:00.000Z",
+      "Date": "2026-06-04T07:00:00.000Z",
       "Rotation": 6,
       "Day": "Day 1",
       "Group": "",
@@ -11573,7 +11573,7 @@
       "Total Cal": ""
     },
     {
-      "Date": "2026-06-01T07:00:00.000Z",
+      "Date": "2026-06-04T07:00:00.000Z",
       "Rotation": 6,
       "Day": "Day 1",
       "Group": "",
@@ -11591,7 +11591,7 @@
       "Total Cal": ""
     },
     {
-      "Date": "2026-06-01T07:00:00.000Z",
+      "Date": "2026-06-04T07:00:00.000Z",
       "Rotation": 6,
       "Day": "Day 1",
       "Group": "",
@@ -11609,7 +11609,7 @@
       "Total Cal": ""
     },
     {
-      "Date": "2026-06-01T07:00:00.000Z",
+      "Date": "2026-06-04T07:00:00.000Z",
       "Rotation": 6,
       "Day": "Day 1",
       "Group": "",
@@ -11627,7 +11627,7 @@
       "Total Cal": ""
     },
     {
-      "Date": "2026-06-01T07:00:00.000Z",
+      "Date": "2026-06-04T07:00:00.000Z",
       "Rotation": 6,
       "Day": "Day 1",
       "Group": "",
@@ -11645,7 +11645,7 @@
       "Total Cal": ""
     },
     {
-      "Date": "2026-06-01T07:00:00.000Z",
+      "Date": "2026-06-04T07:00:00.000Z",
       "Rotation": 6,
       "Day": "Day 1",
       "Group": "",
@@ -12945,6 +12945,71 @@
       "Raw name": "Seated Bicep Curls",
       "Canonical": "Seated Bicep Curls",
       "Muscle group": "Arms"
+    },
+    {
+      "Raw name": "Seated Shoulder Press Machine",
+      "Canonical": "Seated Shoulder Press Machine",
+      "Muscle group": "Shoulders"
+    },
+    {
+      "Raw name": "Standing DB Arnold Press",
+      "Canonical": "Arnold Press",
+      "Muscle group": "Shoulders"
+    },
+    {
+      "Raw name": "Chest-Supported Machine Row",
+      "Canonical": "Chest-Supported Row",
+      "Muscle group": "Back"
+    },
+    {
+      "Raw name": "Bicep Curl",
+      "Canonical": "Bicep Curl",
+      "Muscle group": "Arms"
+    },
+    {
+      "Raw name": "Serratus Wall Slide",
+      "Canonical": "Serratus Wall Slide",
+      "Muscle group": "Warm-up"
+    },
+    {
+      "Raw name": "Landmine Squat",
+      "Canonical": "Landmine Squat",
+      "Muscle group": "Legs"
+    },
+    {
+      "Raw name": "Barbell Row",
+      "Canonical": "Barbell Row",
+      "Muscle group": "Back"
+    },
+    {
+      "Raw name": "Copenhagen Plank",
+      "Canonical": "Copenhagen Plank",
+      "Muscle group": "Core"
+    },
+    {
+      "Raw name": "Barbell Overhead Press",
+      "Canonical": "Overhead Press",
+      "Muscle group": "Shoulders"
+    },
+    {
+      "Raw name": "DB Incline Press",
+      "Canonical": "DB Incline Press",
+      "Muscle group": "Chest"
+    },
+    {
+      "Raw name": "Barbell Curl",
+      "Canonical": "Barbell Curl",
+      "Muscle group": "Arms"
+    },
+    {
+      "Raw name": "Dumbbell Squeeze Press",
+      "Canonical": "DB Squeeze Press",
+      "Muscle group": "Chest"
+    },
+    {
+      "Raw name": "Cable Rope Hammer Curl",
+      "Canonical": "Hammer Curl",
+      "Muscle group": "Arms"
     }
   ],
   "Runs": [
@@ -13904,6 +13969,24 @@
       "Balls Hit": "",
       "Drills": "Chipping outside on Level 6",
       "Notes": ""
+    },
+    {
+      "Date": "2026-06-03T07:00:00.000Z",
+      "Location": "Short Game",
+      "Duration": 30,
+      "Focus": "",
+      "Balls Hit": "",
+      "Drills": "Practiced release 1, 2 and 3.",
+      "Notes": "Good feels at Pitt short game area. 1 = grip to front hip, 2 = grip at belt buckle, 3 = sheath the sword."
+    },
+    {
+      "Date": "2026-06-03T07:00:00.000Z",
+      "Location": "Course",
+      "Duration": 65,
+      "Focus": "",
+      "Balls Hit": "",
+      "Drills": "",
+      "Notes": "6 holes at Pitt 1 + 5-9"
     }
   ],
   "Settings": [

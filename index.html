@@ -1900,7 +1900,7 @@ async function loadGym(preFetched) {
       return;
     }
     if (!byDate[dateStr]) {
-      byDate[dateStr] = {date, dateStr, day: ((r.Rotation||'') + ' ' + (r.Day||'')).trim() || '-', exercises: [], totalSets: 0};
+      byDate[dateStr] = {date, dateStr, rotation: r.Rotation || '', day: ((r.Rotation||'') + ' ' + (r.Day||'')).trim() || '-', exercises: [], totalSets: 0};
     }
     const setsData = [];
     for (let s = 1; s <= 4; s++) {
@@ -2831,6 +2831,12 @@ async function initLogger() {
     restoringDraft = false;
     showDraftIndicator(draft.savedAt);
   } else {
+    // No draft to restore. Pre-fill rotation from the most recent logged session.
+    const rotEl = document.getElementById('log-rotation');
+    if (rotEl && !rotEl.value) {
+      const lastRot = findLastRotation();
+      if (lastRot) rotEl.value = lastRot;
+    }
     loadLoggerDay('Day 1', document.querySelector('#logger-day-picker .day-btn'));
   }
 }
@@ -2918,11 +2924,62 @@ function formatLastDate(dateStr) {
   return MONTHS[d.getMonth()] + ' ' + d.getDate();
 }
 
+// Return the rotation value from the most recent session, or '' if none found.
+function findLastRotation() {
+  if (!allGymSorted || !allGymByDate) return '';
+  for (const date of allGymSorted) {
+    const k = date.toISOString().split('T')[0];
+    const sess = allGymByDate[k];
+    if (sess && sess.rotation !== '' && sess.rotation != null) {
+      return String(sess.rotation);
+    }
+  }
+  return '';
+}
+
+// Suggest the next progression step given last session's sets for an exercise.
+// Returns {weightPR, repPR, mode} or null. mode is 'weighted' or 'bw'.
+function suggestProgression(name, sets) {
+  if (!sets || !sets.length) return null;
+  const stripSide = v => Number(String(v).replace(/\/?\s*side$/i, '').trim());
+  const numericSets = sets
+    .filter(s => s.reps !== '' && s.reps != null && s.weight !== '' && s.weight != null && s.weight !== 'BW')
+    .map(s => ({reps: stripSide(s.reps), weight: Number(s.weight)}))
+    .filter(s => Number.isFinite(s.reps) && Number.isFinite(s.weight) && s.reps > 0 && s.weight > 0);
+  const bwSets = sets
+    .filter(s => s.weight === 'BW' && s.reps !== '' && s.reps != null)
+    .map(s => ({reps: stripSide(s.reps)}))
+    .filter(s => Number.isFinite(s.reps) && s.reps > 0);
+
+  if (numericSets.length) {
+    const top = numericSets.reduce((max, s) => s.weight > max.weight ? s : (s.weight === max.weight && s.reps > max.reps ? s : max));
+    // Big compounds get +10 lb, everything else +5.
+    const isBig = /(\bsquat\b|deadlift|\bdl\b|hex bar)/i.test(name);
+    const inc = isBig ? 10 : 5;
+    return {
+      mode: 'weighted',
+      weightPR: top.reps + 'x' + (top.weight + inc),
+      repPR:    (top.reps + 1) + 'x' + top.weight,
+      delta:    '+' + inc + ' lb or +1 rep'
+    };
+  }
+  if (bwSets.length) {
+    const topReps = Math.max(...bwSets.map(s => s.reps));
+    return {
+      mode: 'bw',
+      repPR: (topReps + 1) + ' reps',
+      delta: '+1 rep'
+    };
+  }
+  return null;
+}
+
 // Read last-session data and apply it to a logger row as placeholders + hint text.
 // Called when row is created and whenever the exercise name changes.
 function updateRowLastHint(row) {
   const nameEl = row.querySelector('.lg-name');
   const hintEl = row.querySelector('.lg-last-hint');
+  const sugEl  = row.querySelector('.lg-suggestion');
   const repsInputs = row.querySelectorAll('.lg-reps');
   const wtInputs = row.querySelectorAll('.lg-wt');
   if (!nameEl || !hintEl) return;
@@ -2931,6 +2988,7 @@ function updateRowLastHint(row) {
   repsInputs.forEach(i => i.placeholder = '');
   wtInputs.forEach(i => i.placeholder = '');
   hintEl.textContent = '';
+  if (sugEl) sugEl.textContent = '';
 
   const name = (nameEl.value || '').trim();
   if (!name) return;
@@ -2959,6 +3017,18 @@ function updateRowLastHint(row) {
     wtTxt = allBW ? '@ BW' : (allSame ? '@ ' + wts[0] : '@ ' + wts.join(' / '));
   }
   hintEl.textContent = ['Last ' + formatLastDate(last.dateStr) + ':', repsTxt, wtTxt].filter(Boolean).join(' ');
+
+  // Progressive overload suggestion below the last-session hint.
+  if (sugEl) {
+    const sug = suggestProgression(name, last.sets);
+    if (sug) {
+      if (sug.mode === 'weighted') {
+        sugEl.textContent = 'Try: ' + sug.weightPR + ' (weight PR) or ' + sug.repPR + ' (rep PR)';
+      } else {
+        sugEl.textContent = 'Try: ' + sug.repPR + ' (rep PR)';
+      }
+    }
+  }
 }
 
 // TODO (future): support time-based exercises (e.g. dead hang).
@@ -2983,7 +3053,8 @@ function addLoggerRow(name) {
       <button type="button" class="lg-ps-btn" onclick="togglePerSide(this)" style="background:#fff;border:0.5px solid #ddd;border-radius:6px;font-size:10px;font-weight:600;color:#888;padding:4px 8px;cursor:pointer;white-space:nowrap;">per side</button>
       <button onclick="this.closest('.logger-row').remove()" style="background:none;border:none;color:#888;font-size:18px;cursor:pointer;padding:0 6px;">×</button>
     </div>
-    <div class="lg-last-hint" style="font-size:10px;color:#888;margin-bottom:4px;min-height:12px;font-style:italic;"></div>
+    <div class="lg-last-hint" style="font-size:10px;color:#888;min-height:12px;font-style:italic;"></div>
+    <div class="lg-suggestion" style="font-size:10px;color:#5c3d0b;margin-bottom:4px;min-height:12px;font-weight:500;"></div>
     <div style="display:grid;grid-template-columns:30px repeat(4,1fr);gap:4px;align-items:center;margin-bottom:3px;">
       <span style="font-size:9px;color:#888;">Reps</span>
       <input type="number" class="lg-reps" data-set="1" inputmode="numeric" style="font-size:12px;padding:4px;border:0.5px solid #ddd;border-radius:6px;min-width:0;">

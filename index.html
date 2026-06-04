@@ -1699,6 +1699,30 @@ function toggleGolfDetail(i) {
 }
 
 let golfChart;
+
+// Linear regression trend line for chart overlays.
+// Returns an array of y-values aligned to the input order, or null if there are
+// fewer than 3 valid points (anything less is too noisy to call a trend).
+function linearTrend(values) {
+  const pts = [];
+  for (let i = 0; i < values.length; i++) {
+    const y = Number(values[i]);
+    if (Number.isFinite(y)) pts.push({x: i, y});
+  }
+  if (pts.length < 3) return null;
+  const n = pts.length;
+  const sumX  = pts.reduce((s, p) => s + p.x, 0);
+  const sumY  = pts.reduce((s, p) => s + p.y, 0);
+  const sumXY = pts.reduce((s, p) => s + p.x * p.y, 0);
+  const sumX2 = pts.reduce((s, p) => s + p.x * p.x, 0);
+  const denom = n * sumX2 - sumX * sumX;
+  if (!denom) return null;
+  const slope = (n * sumXY - sumX * sumY) / denom;
+  const intercept = (sumY - slope * sumX) / n;
+  return values.map((_, i) => slope * i + intercept);
+}
+const TREND_STYLE = {label:'Trend', borderColor:'#7a7a7a', borderDash:[3,3], pointRadius:0, borderWidth:1.5, fill:false, type:'line'};
+const TREND_LEGEND = {c:'#7a7a7a', l:'Trend'};
 function setGolfLegend(items) {
   document.getElementById('golf-legend').innerHTML = items.map(i =>
     `<span><span class="legend-dot" style="background:${i.c}"></span>${i.l}</span>`
@@ -1714,53 +1738,72 @@ function showGolfChart(type, btn) {
   const ctx = document.getElementById('golf-chart').getContext('2d');
   const labels = rounds.map(r => r.date);
 
+  // Helper: append a trend dataset if there are enough valid points.
+  function withTrend(datasets, values) {
+    const trend = linearTrend(values);
+    if (trend) datasets.push({...TREND_STYLE, data: trend});
+    return datasets;
+  }
+
   if (type === 'score') {
-    setGolfLegend([{c:'#1D9E75',l:'Score'},{c:'#1D9E7577',l:'Target (82)'}]);
-    golfChart = new Chart(ctx, {type:'line', data:{labels, datasets:[
-      {label:'Score', data:rounds.map(r=>r.score), borderColor:'#1D9E75', backgroundColor:'#1D9E7522', pointRadius:5, pointHoverRadius:7, tension:0.3, fill:true},
+    const scores = rounds.map(r => r.score);
+    const legend = [{c:'#1D9E75',l:'Score'},{c:'#1D9E7577',l:'Target (82)'}];
+    if (linearTrend(scores)) legend.push(TREND_LEGEND);
+    setGolfLegend(legend);
+    golfChart = new Chart(ctx, {type:'line', data:{labels, datasets: withTrend([
+      {label:'Score', data:scores, borderColor:'#1D9E75', backgroundColor:'#1D9E7522', pointRadius:5, pointHoverRadius:7, tension:0.3, fill:true},
       {label:'Target', data:rounds.map(()=>82), borderColor:'#1D9E75', borderDash:[6,4], pointRadius:0, borderWidth:1.5, fill:false}
-    ]}, options:{
+    ], scores)}, options:{
       responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw}}},
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.dataset.label==='Trend' ? Number(c.raw).toFixed(1) : c.raw)}}},
       scales:{
         y:{min:78, max:100, title:{display:true,text:'Score',font:{size:9}}, ticks:{font:{size:9}}},
         x:{ticks:{font:{size:9}}}
       }
     }});
   } else if (type === 'fir') {
-    setGolfLegend([{c:'#378ADD',l:'FIR %'},{c:'#378ADD77',l:'Target (60%)'}]);
-    golfChart = new Chart(ctx, {type:'bar', data:{labels, datasets:[
-      {label:'FIR %', data:rounds.map(r=>r.fairway !== null ? Math.round(r.fairway/14*100) : null), backgroundColor:'#378ADD', borderRadius:3},
+    const firPcts = rounds.map(r=>r.fairway !== null ? Math.round(r.fairway/14*100) : null);
+    const legend = [{c:'#378ADD',l:'FIR %'},{c:'#378ADD77',l:'Target (60%)'}];
+    if (linearTrend(firPcts)) legend.push(TREND_LEGEND);
+    setGolfLegend(legend);
+    golfChart = new Chart(ctx, {type:'bar', data:{labels, datasets: withTrend([
+      {label:'FIR %', data:firPcts, backgroundColor:'#378ADD', borderRadius:3},
       {label:'Target', type:'line', data:rounds.map(()=>60), borderColor:'#378ADD', borderDash:[6,4], pointRadius:0, borderWidth:1.5, fill:false}
-    ]}, options:{
+    ], firPcts)}, options:{
       responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+'%'}}},
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.dataset.label==='Trend' ? Number(c.raw).toFixed(1) : c.raw)+'%'}}},
       scales:{
         y:{min:0, max:100, title:{display:true,text:'%',font:{size:9}}, ticks:{font:{size:9}}},
         x:{ticks:{font:{size:9}}}
       }
     }});
   } else if (type === 'gir') {
-    setGolfLegend([{c:'#D85A30',l:'GIR %'},{c:'#D85A3077',l:'Target (40%)'}]);
-    golfChart = new Chart(ctx, {type:'bar', data:{labels, datasets:[
-      {label:'GIR %', data:rounds.map(r=>r.gir !== null ? Math.round(r.gir/18*100) : null), backgroundColor:'#D85A30', borderRadius:3},
+    const girPcts = rounds.map(r=>r.gir !== null ? Math.round(r.gir/18*100) : null);
+    const legend = [{c:'#D85A30',l:'GIR %'},{c:'#D85A3077',l:'Target (40%)'}];
+    if (linearTrend(girPcts)) legend.push(TREND_LEGEND);
+    setGolfLegend(legend);
+    golfChart = new Chart(ctx, {type:'bar', data:{labels, datasets: withTrend([
+      {label:'GIR %', data:girPcts, backgroundColor:'#D85A30', borderRadius:3},
       {label:'Target', type:'line', data:rounds.map(()=>40), borderColor:'#D85A30', borderDash:[6,4], pointRadius:0, borderWidth:1.5, fill:false}
-    ]}, options:{
+    ], girPcts)}, options:{
       responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+'%'}}},
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.dataset.label==='Trend' ? Number(c.raw).toFixed(1) : c.raw)+'%'}}},
       scales:{
         y:{min:0, max:100, title:{display:true,text:'%',font:{size:9}}, ticks:{font:{size:9}}},
         x:{ticks:{font:{size:9}}}
       }
     }});
   } else if (type === 'putts') {
-    setGolfLegend([{c:'#BA7517',l:'Putts'},{c:'#BA751777',l:'Target (30)'}]);
-    golfChart = new Chart(ctx, {type:'line', data:{labels, datasets:[
-      {label:'Putts', data:rounds.map(r=>r.putts), borderColor:'#BA7517', backgroundColor:'#BA751722', pointRadius:5, tension:0.3, fill:true},
+    const putts = rounds.map(r=>r.putts);
+    const legend = [{c:'#BA7517',l:'Putts'},{c:'#BA751777',l:'Target (30)'}];
+    if (linearTrend(putts)) legend.push(TREND_LEGEND);
+    setGolfLegend(legend);
+    golfChart = new Chart(ctx, {type:'line', data:{labels, datasets: withTrend([
+      {label:'Putts', data:putts, borderColor:'#BA7517', backgroundColor:'#BA751722', pointRadius:5, tension:0.3, fill:true},
       {label:'Target', data:rounds.map(()=>30), borderColor:'#BA7517', borderDash:[6,4], pointRadius:0, borderWidth:1.5, fill:false}
-    ]}, options:{
+    ], putts)}, options:{
       responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.raw||'—')}}},
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.dataset.label==='Trend' ? Number(c.raw).toFixed(1) : (c.raw||'—'))}}},
       scales:{
         y:{min:26, max:36, title:{display:true,text:'Putts',font:{size:9}}, ticks:{font:{size:9}}},
         x:{ticks:{font:{size:9}}}

@@ -2906,7 +2906,7 @@ function findLastSets(name) {
       const exName = (ex.ex || '').trim().toLowerCase();
       const cleanName = exName.replace(/\s*\(per side\)\s*$/i, '');
       if ((exName === target || cleanName === target) && ex.sets && ex.sets.length) {
-        return {sets: ex.sets, dateStr: k};
+        return {sets: ex.sets, dateStr: k, note: ex.note || ''};
       }
     }
   }
@@ -3016,7 +3016,9 @@ function updateRowLastHint(row) {
     const allSame = wts.every(w => String(w) === String(wts[0]));
     wtTxt = allBW ? '@ BW' : (allSame ? '@ ' + wts[0] : '@ ' + wts.join(' / '));
   }
-  hintEl.textContent = ['Last ' + formatLastDate(last.dateStr) + ':', repsTxt, wtTxt].filter(Boolean).join(' ');
+  let hintTxt = ['Last ' + formatLastDate(last.dateStr) + ':', repsTxt, wtTxt].filter(Boolean).join(' ');
+  if (last.note) hintTxt += ' · "' + last.note + '"';
+  hintEl.textContent = hintTxt;
 
   // Progressive overload suggestion below the last-session hint.
   if (sugEl) {

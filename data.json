@@ -13172,6 +13172,11 @@
       "Raw name": "Cable Rope Hammer Curl",
       "Canonical": "Hammer Curl",
       "Muscle group": "Arms"
+    },
+    {
+      "Raw name": "Landmine Romanian Deadlift",
+      "Canonical": "Landmine Romanian Deadlift",
+      "Muscle group": "Legs"
     }
   ],
   "Runs": [

@@ -14026,6 +14026,17 @@
       "Strava ID": 18471920557,
       "Indoor": false,
       "Elevation": 5
+    },
+    {
+      "Date": "2026-06-07T11:14:05.000Z",
+      "Type": "Easy",
+      "Km": 5,
+      "Pace": 5.78,
+      "HR": 148,
+      "Notes": "Lunch Run",
+      "Strava ID": 18830171897,
+      "Indoor": false,
+      "Elevation": 24
     }
   ],
   "Practice": [

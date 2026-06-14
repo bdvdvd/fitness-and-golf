@@ -14048,6 +14048,17 @@
       "Strava ID": 18870147511,
       "Indoor": false,
       "Elevation": 5
+    },
+    {
+      "Date": "2026-06-14T09:07:17.000Z",
+      "Type": "Easy",
+      "Km": 4.13,
+      "Pace": 5.83,
+      "HR": 152,
+      "Notes": "Morning Run",
+      "Strava ID": 18921915986,
+      "Indoor": false,
+      "Elevation": 5
     }
   ],
   "Practice": [

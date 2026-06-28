@@ -212,6 +212,9 @@ body { overscroll-behavior-y: contain; }
 .period-filter { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 14px; }
 .period-filter button { flex: 0 0 auto; padding: 5px 12px; font-size: 11px; font-weight: 500; background: #fff; border: 0.5px solid var(--border); border-radius: 999px; cursor: pointer; color: var(--muted); }
 .period-filter button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+/* Faint divider between front 9 and back 9 in the per-hole logger grid. */
+#hole-grid-body tr[data-hole="10"] td { border-top: 1px solid #d8d8d8; padding-top: 5px; }
+#hole-grid-body tr[data-hole="9"]  td { padding-bottom: 5px; }
 </style>
 </head>
 <body>
@@ -2387,6 +2390,31 @@ function buildHoleGrid() {
   tbody.addEventListener('click', (e) => {
     if (e.target.classList.contains('cycle-btn')) updateGolfTotals();
   });
+  // Par 3 lockout: when the par cell changes, disable/enable the FW select for that row.
+  tbody.addEventListener('input', (e) => {
+    if (e.target.classList.contains('h-par')) applyPar3FwLock(e.target.closest('tr'));
+  });
+}
+
+// Disable the fairway select on par-3 holes (no fairway to hit off the tee).
+function applyPar3FwLock(row) {
+  if (!row) return;
+  const parEl = row.querySelector('.h-par');
+  const fwEl  = row.querySelector('.h-fw');
+  if (!parEl || !fwEl) return;
+  const par = Number(parEl.value);
+  if (par === 3) {
+    fwEl.value = '-';
+    fwEl.disabled = true;
+    fwEl.style.background = '#f4f4f2';
+    fwEl.style.color = '#bbb';
+    fwEl.style.cursor = 'not-allowed';
+  } else {
+    fwEl.disabled = false;
+    fwEl.style.background = '#fff';
+    fwEl.style.color = '';
+    fwEl.style.cursor = '';
+  }
 }
 
 const UD_STATES = ['-', 'Att', 'Made'];
@@ -2423,6 +2451,7 @@ function fillParsFromCourse() {
     } else if (!inp.value) {
       // leave blank if no entry — user fills manually
     }
+    applyPar3FwLock(inp.closest('tr'));
   });
   updateGolfTotals();
 }

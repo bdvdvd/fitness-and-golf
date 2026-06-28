@@ -215,6 +215,31 @@ body { overscroll-behavior-y: contain; }
 /* Faint divider between front 9 and back 9 in the per-hole logger grid. */
 #hole-grid-body tr[data-hole="10"] td { border-top: 1px solid #d8d8d8; padding-top: 5px; }
 #hole-grid-body tr[data-hole="9"]  td { padding-bottom: 5px; }
+/* Pitt Meadows hole averages: compact per-hole cells. */
+.pitt-avg-grid { display: grid; grid-template-columns: 32px repeat(9, 1fr) 44px; gap: 2px; margin-bottom: 4px; }
+.pitt-avg-row-label { font-size: 9px; color: var(--golf-ink); font-weight: 600; align-self: center; text-align: right; padding-right: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+.pitt-avg-cell { background: #fff; border-radius: 4px; padding: 3px 1px; text-align: center; line-height: 1.15; border: 0.5px solid #e6efe9; }
+.pitt-avg-cell .ph { font-size: 8px; color: #999; }
+.pitt-avg-cell .pa { font-size: 8px; color: #b0b0b0; }
+.pitt-avg-cell .pv { font-size: 13px; font-weight: 600; color: #333; }
+.pitt-avg-cell .pd { font-size: 8px; color: #999; }
+.pitt-avg-tot  { background: var(--golf-wash, #fdf6ef); border-radius: 4px; padding: 3px 2px; text-align: center; line-height: 1.15; border: 0.5px solid #f0e4d2; }
+.pitt-avg-tot .ph { font-size: 8px; color: #5c3d0b; font-weight: 700; letter-spacing: 0.04em; }
+.pitt-avg-tot .pv { font-size: 13px; font-weight: 700; color: #5c3d0b; }
+.pitt-avg-tot .pd { font-size: 8px; color: #5c3d0b; }
+@media (min-width: 600px) {
+  .pitt-avg-grid { grid-template-columns: 44px repeat(9, 1fr) 64px; gap: 4px; }
+  .pitt-avg-row-label { font-size: 12px; padding-right: 8px; }
+  .pitt-avg-cell { padding: 6px 2px; }
+  .pitt-avg-cell .ph { font-size: 11px; }
+  .pitt-avg-cell .pa { font-size: 11px; }
+  .pitt-avg-cell .pv { font-size: 20px; }
+  .pitt-avg-cell .pd { font-size: 11px; }
+  .pitt-avg-tot { padding: 6px 4px; }
+  .pitt-avg-tot .ph { font-size: 11px; }
+  .pitt-avg-tot .pv { font-size: 20px; }
+  .pitt-avg-tot .pd { font-size: 11px; }
+}
 </style>
 </head>
 <body>
@@ -534,6 +559,15 @@ body { overscroll-behavior-y: contain; }
     <span id="golf-distribution-sub" style="font-size:10px;color:#888;font-weight:400;"></span>
   </h3>
   <div id="golf-distribution-rows"></div>
+</div>
+
+<div class="workout-box" id="golf-pitt-avg-box" style="display:none;">
+  <h3 style="display:flex;justify-content:space-between;align-items:center;">
+    <span>Pitt Meadows hole averages</span>
+    <span id="golf-pitt-avg-sub" style="font-size:10px;color:#888;font-weight:400;"></span>
+  </h3>
+  <div id="golf-pitt-avg-body"></div>
+  <div style="font-size:10px;color:var(--soft);margin-top:6px;">Average score per hole across all your Pitt Meadows rounds. Color shows strokes over par (green = par or better, red = worst). Ignores the period filter — this is your full course history.</div>
 </div>
 
 <div class="workout-box" id="golf-practice-impact-box" style="display:none;">
@@ -1032,6 +1066,7 @@ async function loadGolf(preFetched, holesPreFetched) {
   renderGolfHeader();
   renderGolfBreakdown();
   renderGolfDistribution();
+  renderPittHoleAverages();
   renderPracticeImpact();
   renderGolfTable();
   if (document.getElementById('section-golf').classList.contains('active')) {
@@ -1212,16 +1247,38 @@ function renderGolfYtdGoal() {
   const el = document.getElementById('golf-ytd-goal');
   if (!el) return;
   const yearStart = new Date(new Date().getFullYear(), 0, 1);
-  const ytd = (allRounds || []).filter(r => r.rawDate >= yearStart).length;
+  const ytdRounds = (allRounds || []).filter(r => r.rawDate >= yearStart);
+  const ytd = ytdRounds.length;
   const target = Number(SETTINGS && SETTINGS.golfRoundsTarget) || 50;
   const rawPct = target > 0 ? (ytd / target) * 100 : 0;
   const pct = Math.min(100, Math.round(rawPct));
   const done = rawPct >= 100 ? ' done' : '';
-  el.innerHTML = `<div class="goal-row">
-    <div class="goal-label">Rounds this year</div>
-    <div class="goal-value">${ytd} / ${target}</div>
-    <div class="goal-bar"><div class="goal-fill golf${done}" style="width:${pct}%;"></div></div>
-  </div>`;
+
+  // Break 80: customizable threshold via SETTINGS.golfBreakScore (default 80).
+  // Counts YTD rounds under that score and shows progress + gap to first break.
+  const breakScore = Number(SETTINGS && SETTINGS.golfBreakScore) || 80;
+  const scoredYtd = ytdRounds.filter(r => r.score != null);
+  const broken = scoredYtd.filter(r => r.score < breakScore).length;
+  const best = scoredYtd.length ? Math.min(...scoredYtd.map(r => r.score)) : null;
+  const goalRounds = broken > 0 ? broken : 1; // before any breaks, show "0 / 1"
+  const breakPct = Math.min(100, Math.round((broken / goalRounds) * 100));
+  const breakDone = broken > 0 ? ' done' : '';
+  const gap = best != null ? (best - breakScore) : null;
+  const breakValue = broken > 0
+    ? broken + (broken === 1 ? ' round' : ' rounds')
+    : (gap != null ? gap + ' to go (best ' + best + ')' : '—');
+
+  el.innerHTML = `
+    <div class="goal-row">
+      <div class="goal-label">Rounds this year</div>
+      <div class="goal-value">${ytd} / ${target}</div>
+      <div class="goal-bar"><div class="goal-fill golf${done}" style="width:${pct}%;"></div></div>
+    </div>
+    <div class="goal-row">
+      <div class="goal-label">Break ${breakScore} (YTD)</div>
+      <div class="goal-value">${breakValue}</div>
+      <div class="goal-bar"><div class="goal-fill golf${breakDone}" style="width:${breakPct}%;"></div></div>
+    </div>`;
 }
 
 // Baseline stats for a target-handicap golfer, used for the strokes-gained-style breakdown.
@@ -1495,6 +1552,88 @@ function renderPracticeImpact() {
   `;
 }
 
+// Average score per hole at Pitt Meadows across all rounds the user has logged
+// there (ignores the period filter so we're always looking at the full history).
+function renderPittHoleAverages() {
+  const box = document.getElementById('golf-pitt-avg-box');
+  const body = document.getElementById('golf-pitt-avg-body');
+  const sub = document.getElementById('golf-pitt-avg-sub');
+  if (!box || !body) return;
+  const pittHoles = (allHoles || []).filter(h => /pitt/i.test(h.course || ''));
+  if (!pittHoles.length) { box.style.display = 'none'; return; }
+  box.style.display = '';
+
+  // Group by hole number; track score sum/count + most-common par.
+  const byHole = {};
+  for (let i = 1; i <= 18; i++) byHole[i] = {scores: [], pars: {}};
+  pittHoles.forEach(h => {
+    if (!h.hole || h.hole < 1 || h.hole > 18) return;
+    if (h.score) byHole[h.hole].scores.push(h.score);
+    if (h.par) byHole[h.hole].pars[h.par] = (byHole[h.hole].pars[h.par] || 0) + 1;
+  });
+  const rounds = new Set(pittHoles.map(h => (h.rawDate ? h.rawDate.toISOString().split('T')[0] : ''))).size;
+  sub.textContent = rounds + ' round' + (rounds === 1 ? '' : 's') + ' · ' + pittHoles.filter(h => h.score).length + ' holes';
+
+  // Color cell background based on average over-par intensity.
+  // Green (<=0): par or better. Light: <=+0.5. Amber: +0.5-1. Orange: +1-1.5. Red: >+1.5.
+  function bgFor(diff) {
+    if (diff == null) return '#fafaf8';
+    if (diff <= -0.1) return '#e7f5ee'; // under par avg
+    if (diff <= 0.25) return '#eef7f1'; // par-ish
+    if (diff <= 0.75) return '#fdf6ef'; // slight over
+    if (diff <= 1.25) return '#fbeacd'; // over
+    if (diff <= 1.75) return '#fad6c4'; // worse
+    return '#fac9c6'; // worst
+  }
+
+  function cell(n) {
+    const h = byHole[n];
+    // Pick the most common par for this hole (handles occasional mis-entries)
+    let par = 0, parCount = 0;
+    Object.keys(h.pars).forEach(p => { if (h.pars[p] > parCount) { parCount = h.pars[p]; par = Number(p); } });
+    if (!h.scores.length) {
+      return `<div class="pitt-avg-cell"><div class="ph">${n}</div><div class="pa">${par ? 'Par ' + par : '·'}</div><div class="pv">-</div><div class="pd"> </div></div>`;
+    }
+    const avg = h.scores.reduce((s, v) => s + v, 0) / h.scores.length;
+    const diff = par ? avg - par : null;
+    const diffTxt = diff == null ? '' : (diff >= 0.05 ? '+' + diff.toFixed(1) : (diff <= -0.05 ? diff.toFixed(1) : 'E'));
+    return `<div class="pitt-avg-cell" style="background:${bgFor(diff)};"><div class="ph">${n}</div><div class="pa">${par ? 'Par ' + par : '·'}</div><div class="pv">${avg.toFixed(1)}</div><div class="pd">${diffTxt}</div></div>`;
+  }
+
+  // Aggregate front/back/total avg + diff
+  function aggRange(a, b) {
+    let scoreSum = 0, parSum = 0, n = 0;
+    for (let i = a; i <= b; i++) {
+      const h = byHole[i];
+      if (!h.scores.length) continue;
+      let par = 0, parCount = 0;
+      Object.keys(h.pars).forEach(p => { if (h.pars[p] > parCount) { parCount = h.pars[p]; par = Number(p); } });
+      scoreSum += h.scores.reduce((s, v) => s + v, 0) / h.scores.length;
+      parSum += par;
+      n++;
+    }
+    return {avg: scoreSum, par: parSum, n};
+  }
+  function totalCell(label, agg) {
+    if (!agg.n) return `<div class="pitt-avg-tot"><div class="ph">${label}</div><div class="pv">-</div><div class="pd"> </div></div>`;
+    const diff = agg.avg - agg.par;
+    const diffTxt = Math.abs(diff) < 0.05 ? 'E' : (diff > 0 ? '+' + diff.toFixed(1) : diff.toFixed(1));
+    return `<div class="pitt-avg-tot"><div class="ph">${label}</div><div class="pv">${agg.avg.toFixed(1)}</div><div class="pd">${diffTxt}</div></div>`;
+  }
+
+  const front = []; for (let i = 1; i <= 9; i++)  front.push(cell(i));
+  const back  = []; for (let i = 10; i <= 18; i++) back.push(cell(i));
+  const fAgg = aggRange(1, 9), bAgg = aggRange(10, 18);
+  const tAgg = {avg: fAgg.avg + bAgg.avg, par: fAgg.par + bAgg.par, n: fAgg.n + bAgg.n};
+
+  body.innerHTML = `
+    <div class="pitt-avg-grid"><div class="pitt-avg-row-label">Front</div>${front.join('')}${totalCell('OUT', fAgg)}</div>
+    <div class="pitt-avg-grid"><div class="pitt-avg-row-label">Back</div>${back.join('')}${totalCell('IN', bAgg)}</div>
+    <div style="font-size:11px;color:var(--golf-ink);padding:6px 4px 0;">
+      Total avg <strong style="color:#333;">${tAgg.n ? tAgg.avg.toFixed(1) : '-'}</strong>${tAgg.n ? ' (' + (tAgg.avg - tAgg.par >= 0.05 ? '+' : '') + (tAgg.avg - tAgg.par).toFixed(1) + ')' : ''}
+    </div>`;
+}
+
 function renderGolfDistribution() {
   const box = document.getElementById('golf-distribution-box');
   const rowsEl = document.getElementById('golf-distribution-rows');
@@ -1542,6 +1681,7 @@ function renderGolfDistribution() {
     const count = buckets[r.key];
     const pctOfMax = (count / maxCount) * 100;
     const pctOfRound = nRounds > 0 ? (count / nRounds).toFixed(1) : '0';
+    const pctOfHoles = totalHoles > 0 ? (count / totalHoles * 100).toFixed(1) : '0.0';
     return `
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px;">
         <div style="width:90px;color:#555;flex-shrink:0;">${r.label}</div>
@@ -1549,6 +1689,7 @@ function renderGolfDistribution() {
         <div style="flex:1;background:#eee;border-radius:4px;height:10px;overflow:hidden;min-width:40px;">
           <div style="width:${pctOfMax}%;height:100%;background:${r.color};border-radius:4px;transition:width 0.3s;"></div>
         </div>
+        <div style="width:48px;text-align:right;color:#333;font-size:11px;font-weight:500;flex-shrink:0;">${pctOfHoles}%</div>
         <div style="width:48px;text-align:right;color:#888;font-size:10px;flex-shrink:0;">${pctOfRound}/rd</div>
       </div>
     `;

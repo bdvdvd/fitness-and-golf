@@ -1255,19 +1255,38 @@ function renderGolfYtdGoal() {
   const pct = Math.min(100, Math.round(rawPct));
   const done = rawPct >= 100 ? ' done' : '';
 
-  // Break 80: customizable threshold via SETTINGS.golfBreakScore (default 80).
-  // Counts YTD rounds under that score and shows progress + gap to first break.
-  const breakScore = Number(SETTINGS && SETTINGS.golfBreakScore) || 80;
+  // Break-N tracker. Threshold and target count come from either explicit
+  // Settings keys or are parsed from the free-text `golfGoal` field
+  // (e.g. "Break 80 8 times" → threshold=80, target=8).
+  const goalText = (SETTINGS && SETTINGS.golfGoal || '').toString();
+  const breakScoreParsed = (function() {
+    const m = /break\s+(\d{2,3})/i.exec(goalText);
+    return m ? Number(m[1]) : null;
+  })();
+  const breakTargetParsed = (function() {
+    // After "break NN" find a count followed by "times" or "x"
+    const m = /break\s+\d+\D+(\d+)\s*(times?|x\b)/i.exec(goalText);
+    return m ? Number(m[1]) : null;
+  })();
+  const breakScore  = Number(SETTINGS && SETTINGS.golfBreakScore)       || breakScoreParsed  || 80;
+  const breakTarget = Number(SETTINGS && SETTINGS.golfBreakScoreTarget) || breakTargetParsed || 1;
   const scoredYtd = ytdRounds.filter(r => r.score != null);
   const broken = scoredYtd.filter(r => r.score < breakScore).length;
   const best = scoredYtd.length ? Math.min(...scoredYtd.map(r => r.score)) : null;
-  const goalRounds = broken > 0 ? broken : 1; // before any breaks, show "0 / 1"
-  const breakPct = Math.min(100, Math.round((broken / goalRounds) * 100));
-  const breakDone = broken > 0 ? ' done' : '';
+  const breakRawPct = breakTarget > 0 ? (broken / breakTarget) * 100 : 0;
+  const breakPct = Math.min(100, Math.round(breakRawPct));
+  const breakDone = breakRawPct >= 100 ? ' done' : '';
   const gap = best != null ? (best - breakScore) : null;
-  const breakValue = broken > 0
-    ? broken + (broken === 1 ? ' round' : ' rounds')
-    : (gap != null ? gap + ' to go (best ' + best + ')' : '—');
+  let breakValue;
+  if (breakTarget > 1) {
+    // Counted goal: show "N / target"
+    breakValue = broken + ' / ' + breakTarget;
+    if (broken === 0 && gap != null && gap > 0) breakValue += ' · ' + gap + ' to first (best ' + best + ')';
+  } else {
+    breakValue = broken > 0
+      ? broken + (broken === 1 ? ' round' : ' rounds')
+      : (gap != null ? gap + ' to go (best ' + best + ')' : '—');
+  }
 
   el.innerHTML = `
     <div class="goal-row">

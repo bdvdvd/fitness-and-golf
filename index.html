@@ -567,7 +567,7 @@ body { overscroll-behavior-y: contain; }
     <span id="golf-pitt-avg-sub" style="font-size:10px;color:#888;font-weight:400;"></span>
   </h3>
   <div id="golf-pitt-avg-body"></div>
-  <div style="font-size:10px;color:var(--soft);margin-top:6px;">Average score per hole across all your Pitt Meadows rounds. Color shows strokes over par (green = par or better, red = worst). Ignores the period filter — this is your full course history.</div>
+  <div style="font-size:10px;color:var(--soft);margin-top:6px;">Average score per hole across your Pitt Meadows rounds in the selected period. Color shows strokes over par (green = par or better, red = worst).</div>
 </div>
 
 <div class="workout-box" id="golf-practice-impact-box" style="display:none;">
@@ -798,6 +798,7 @@ function setPeriod(tab, days, btn) {
     applyGolfPeriod();
     renderGolfBreakdown();
     renderGolfDistribution();
+    renderPittHoleAverages();
     renderPracticeImpact();
     renderGolfTable();
     showGolfChart(activeGolfChart || 'score');
@@ -1559,7 +1560,10 @@ function renderPittHoleAverages() {
   const body = document.getElementById('golf-pitt-avg-body');
   const sub = document.getElementById('golf-pitt-avg-sub');
   if (!box || !body) return;
-  const pittHoles = (allHoles || []).filter(h => /pitt/i.test(h.course || ''));
+  const cutoff = periodCutoff('golf');
+  const pittHoles = (allHoles || []).filter(h =>
+    /pitt/i.test(h.course || '') && (!cutoff || h.rawDate >= cutoff)
+  );
   if (!pittHoles.length) { box.style.display = 'none'; return; }
   box.style.display = '';
 
@@ -1572,7 +1576,7 @@ function renderPittHoleAverages() {
     if (h.par) byHole[h.hole].pars[h.par] = (byHole[h.hole].pars[h.par] || 0) + 1;
   });
   const rounds = new Set(pittHoles.map(h => (h.rawDate ? h.rawDate.toISOString().split('T')[0] : ''))).size;
-  sub.textContent = rounds + ' round' + (rounds === 1 ? '' : 's') + ' · ' + pittHoles.filter(h => h.score).length + ' holes';
+  sub.textContent = periodLabel('golf') + ' · ' + rounds + ' round' + (rounds === 1 ? '' : 's') + ' · ' + pittHoles.filter(h => h.score).length + ' holes';
 
   // Color cell background based on average over-par intensity.
   // Green (<=0): par or better. Light: <=+0.5. Amber: +0.5-1. Orange: +1-1.5. Red: >+1.5.

@@ -14476,6 +14476,17 @@
       "Strava ID": 19080264463,
       "Indoor": false,
       "Elevation": 3
+    },
+    {
+      "Date": "2026-06-28T18:05:51.000Z",
+      "Type": "Shakeout",
+      "Km": 2.03,
+      "Pace": 5.87,
+      "HR": 147,
+      "Notes": "Evening Run",
+      "Strava ID": 19105106612,
+      "Indoor": false,
+      "Elevation": 48
     }
   ],
   "Practice": [
@@ -16287,6 +16298,15 @@
       "Max HR": 164,
       "Calories": "",
       "Strava ID": 19056976512
+    },
+    {
+      "Date": "2026-06-28T16:54:20.000Z",
+      "Name": "Afternoon Weight Training",
+      "Duration": 42,
+      "Avg HR": 109,
+      "Max HR": 151,
+      "Calories": "",
+      "Strava ID": 19104848594
     }
   ],
   "Courses": [
